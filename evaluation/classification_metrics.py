@@ -1,17 +1,13 @@
 """
-Full classification metrics at three LOS decision thresholds (5-day fixed,
-6.71-day Youden-optimal, 7-day) for all three FINAL nested-tuned restricted
-models. Same construction as final_metrics_tuned.py (ground-truth severity
-label fixed at true_los > 5 throughout; only the cutoff applied to the
-predicted SCORE varies by row; AUC/C-index are threshold-independent,
-computed once per model), extended to a third threshold for operating-point
-comparison.
+Computes classification metrics (accuracy, sensitivity, specificity,
+precision, F1) at three length-of-stay decision thresholds (5-day fixed,
+6.71-day Youden-optimal, 7-day) for the imaging-only, clinical-only, and
+integrated restricted models. The ground-truth severity label is fixed at
+length of stay greater than 5 days for all rows. ROC AUC and C-index are
+threshold-independent and computed once per model.
 
-6.71-day kept at the same fixed value used throughout the revision (see
-final_metrics_by_threshold_v2.py / final_metrics_tuned.py) for comparability
-across models, not re-derived per model.
-
-Pure computation on existing OOF prediction files -- no retraining.
+Input: the out-of-fold predictions for each restricted model.
+Output: classification_metrics.csv.
 """
 import os
 import pandas as pd
@@ -24,7 +20,7 @@ REVISION_DIR = os.path.dirname(os.path.abspath(__file__))
 GROUND_TRUTH_THRESHOLD = 5
 DECISION_THRESHOLDS = [
     ("5-day (fixed)", 5.0),
-    ("6.71-day (Youden-optimal, pre-finalization)", 6.712525844573975),
+    ("6.71-day (Youden-optimal)", 6.712525844573975),
     ("7-day", 7.0),
 ]
 
@@ -74,7 +70,7 @@ def main():
             })
 
     out = pd.DataFrame(rows)
-    path = os.path.join(REVISION_DIR, "metrics_by_threshold_5_67_7.csv")
+    path = os.path.join(REVISION_DIR, "classification_metrics.csv")
     out.to_csv(path, index=False)
     print(f"Saved {path}\n")
     print(out.to_string(index=False))

@@ -1,17 +1,14 @@
 """
-Canonical Table II replacement: original paper's reported metrics (full/leaky
-feature set) vs. the new restricted-feature-set models, side by side.
+Builds the manuscript's Table II: classification metrics for the imaging,
+clinical-only, and integrated models on the full feature set, alongside the
+same models on the restricted (triage-time-only) feature set. The imaging
+model uses the same feature set in both columns, since it does not take
+clinical features as input.
 
-Pure metric computation on existing OOF prediction files -- no retraining.
-Uses the TUNED clinical-only-restricted predictions (eta=0.03, depth=3), not
-the default underfit run, per the standardized baseline.
-
-NOTE ON COMPARABILITY: original "Integrated"/"Clinical Data" used the full
-leaky feature set; "new_restricted" uses triage-time-only features. This is
-NOT an apples-to-apples model comparison -- the deltas reflect the cost of
-removing leakage, not a regression. "Chest X-ray (imaging)" is the one row
-that IS apples-to-apples (the imaging model never used clinical features, so
-there was nothing to restrict); its delta reflects only run-to-run variation.
+Input: out-of-fold prediction files for the restricted-feature-set metrics.
+The full-feature-set ("original") metrics are hardcoded published values
+from the original submission, not read from any file.
+Output: table2_comparison.csv.
 """
 import os
 import pandas as pd
@@ -23,9 +20,9 @@ from lifelines.utils import concordance_index
 REVISION_DIR = os.path.dirname(os.path.abspath(__file__))
 LOS_THRESHOLD = 5
 
-# Original paper's Table II (5-day threshold) + integrated ROC AUC from text.
-# Imaging-only and clinical-only ROC AUC were not reported in the original
-# paper -- left as None, not fabricated.
+# The manuscript's published Table II (5-day threshold) and integrated ROC
+# AUC. Imaging-only and clinical-only ROC AUC are not published and are
+# left as None.
 ORIGINAL_TABLE = {
     "integrated":    {"accuracy": 0.876, "precision": 0.836, "recall": 0.958, "f1": 0.893,
                        "specificity": 0.781, "c_index": 0.844, "roc_auc": 0.930},

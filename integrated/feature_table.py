@@ -1,9 +1,13 @@
 """
-Step 7 -- feature/missingness table for the supplement (Reviewer 3, minor #1).
-Pure description of existing data, no modeling. Self-contained: re-derives the
-Step 2 classification explicitly here (category / role) rather than depending
-on scratch files from that session, and re-fetches the TCIA dictionary fresh
-(same URL verified reachable during Step 2) for column_type / is_chart_abstracted.
+Builds the candidate clinical-variable and missingness table (Supplementary
+Table S1) from the TCIA data dictionary and the modeled cohort. Classifies
+each variable by category and role (selected for the restricted feature
+set, dropped for leakage/consequence, or non-predictor) and computes its
+missingness rate in the cohort.
+
+Input: the TCIA clinical data dictionary (fetched from its public URL) and
+the clinical feature table (AllData.csv).
+Output: feature_table.csv.
 """
 import os
 import re
@@ -282,7 +286,7 @@ def main():
     out["_role_sort"] = out["role"].map(role_order)
     out = out.sort_values(["category", "_role_sort", "variable_name"]).drop(columns="_role_sort")
 
-    path = os.path.join(REVISION_DIR, "step7_feature_table.csv")
+    path = os.path.join(REVISION_DIR, "feature_table.csv")
     out.to_csv(path, index=False)
 
     # ---- summary ----

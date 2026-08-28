@@ -1,24 +1,14 @@
 """
-Option C: proper per-model hyperparameter tuning via nested CV, replacing the
-asymmetric setup (clinical-only hand-tuned via a one-off sweep, integrated on
-defaults) and the forced-symmetric _final setup (both hand-set to the same
-clinical-winning config, without checking whether that config actually suits
-the integrated model too).
+Selects XGBoost hyperparameters via nested cross-validation, separately for
+the restricted clinical-only model (116 features) and the restricted
+integrated model (117 features), and fits each with its selected
+configuration. Full-feature-set models are not processed by this script.
 
-Runs hyperparam_tuning.nested_cv_select_and_fit for clinical_only_restricted
-and integrated_restricted (kidney_transplant already dropped -- 116 and 117
-features respectively, from build_integrated_model.py's updated
-RESTRICTED_DROP_COLS). Full-set models untouched, not regenerated here.
-
-Outputs use a `_nested_tuned` suffix, NOT the literal `_tuned` suggested in
-the prompt -- `oof_clinical_only_restricted_tuned.csv` already exists (the
-older, non-searched, pre-kidney-transplant-drop fixed-config file, still read
-by step4_delong.py / table2_comparison.py) and overwriting or shadowing it
-with a same-named-but-different-meaning file would be a silent correctness
-hazard. `_nested_tuned` is unambiguous and doesn't collide with anything on
-disk. Does not overwrite oof_clinical_only_restricted_final.csv or
-oof_integrated_restricted_final.csv (the previous run's forced-symmetric
-files) either.
+Input: the clinical feature table and the imaging model's out-of-fold
+predictions.
+Output: oof_clinical_only_restricted_nested_tuned.csv,
+oof_integrated_restricted_nested_tuned.csv, hyperparam_search_log.csv,
+hyperparam_search_full_grid.csv, metrics_summary_nested_tuned.csv.
 """
 import os
 import numpy as np

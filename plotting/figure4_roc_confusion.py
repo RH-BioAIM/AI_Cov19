@@ -1,24 +1,11 @@
 """
-Figure 4 (ROC + confusion matrix), regenerated from the FINAL nested-CV
-per-model-tuned restricted integrated model (oof_integrated_restricted_nested_tuned.csv
--- see build_nested_tuned_models.py / HUNTER_HANDOFF_R1.md for how that file
-was produced). Replaces the old AUC-0.93 version, which was built on the
-original full (leaky) feature set.
+Generates Figure 4: an ROC curve (panel a) and a confusion matrix at the
+5-day length-of-stay decision threshold (panel b) for the restricted
+integrated model.
 
-NOTE on matching "the existing figure's style": the original Figure4.pdf and
-its generating script were not found anywhere in the accessible filesystem
-(searched CR/, gitsevdata/covid-severity/, and for any manuscript source --
-none present). This follows the plain-matplotlib convention already used
-elsewhere in this codebase for ROC curves (sev_eval.py: AUC in the legend,
-gray dashed chance diagonal, plain grid, tight_layout, no seaborn/custom
-style) rather than guessing at unavailable manuscript styling.
-
-Panel (a): ROC curve, restricted integrated model (nested-tuned).
-Panel (b): confusion matrix at the fixed 5-day LOS decision threshold, same
-predictions, same ground-truth definition (true_los > 5) used everywhere
-else in this revision.
-
-Pure computation/plotting on an existing OOF prediction file -- no retraining.
+Input: the nested-CV-tuned integrated model's out-of-fold predictions
+(oof_integrated_restricted_nested_tuned.csv).
+Output: Figure4.pdf, Figure4.png.
 """
 import os
 import numpy as np

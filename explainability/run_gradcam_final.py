@@ -1,31 +1,19 @@
 """
-Attempt 3: does fixing the img<=500->0 hard-masking boundary at the source
-improve stage-1 (28x28) Grad-CAM's lung localization?
+Tests whether feathering the imaging preprocessing's foreground/background
+boundary changes the Swin backbone's predictions and Grad-CAM lung
+localization at the 28x28-token stage. Phase A confirms the predicted
+length of stay is consistent between the standard and feathered
+preprocessing before any Grad-CAM comparison is trusted. Phase B
+regenerates Grad-CAM and the sanity, corner-artifact, and
+segmentation-mass measurements under the feathered preprocessing.
 
-Context: attempt2/ established stage-1 (28x28 tokens) Grad-CAM as the
-artifact-free-enough method (case-specific maps, no corner bias, unlike
-stage-2/14x14 or the original stage-3/7x7) but real segmentation-based
-in-lung mass was only 0.326 against a 0.279 chance baseline -- a weak
-result. The remaining hypothesis: the preprocess_image hard mask
-(img<=500->0) injects a real spatial discontinuity that could be quietly
-biasing the whole map, not just the stage-2 corner spikes.
-
-Two-phase design:
-  Phase A (guardrail, MUST pass before anything else is trusted): the model
-    was trained exclusively on hard-masked images. Feeding it differently
-    preprocessed images at inference is a train/inference distribution
-    shift. Before trusting any CAM computed on the corrected preprocessing,
-    confirm predicted LOS is still reasonable (not wildly different from
-    the same case's hard-preprocessing prediction). If it isn't, STOP --
-    the artifact and "the model is confused by an out-of-distribution
-    input" are then confounded and nothing downstream is interpretable.
-  Phase B (only if A passes): regenerate stage-1 Grad-CAM on the corrected
-    preprocessing for the same 10 cases, rerun the same sanity/corner/
-    segmentation-mass measurements as attempt2, report a direct before
-    (0.326) / after comparison.
-
-Does not modify vitfreeze.py or any checkpoint (read-only load). Does not
-modify attempt2/ (imported from, not edited).
+Input: a per-fold model checkpoint, predictions, and patient image paths.
+Output: diagnostics/phase_a_prediction_consistency.csv,
+diagnostics/boundary_gradient_check.csv,
+diagnostics/sanity_check_corrected.csv,
+diagnostics/corner_artifact_corrected.csv,
+diagnostics/segmentation_mass_fraction_corrected.csv,
+diagnostics/final_head_to_head.txt, and overlay images.
 """
 import os
 import sys
@@ -36,15 +24,16 @@ import cv2
 from scipy.stats import pearsonr
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ATTEMPT2_DIR = os.path.normpath(os.path.join(HERE, "..", "attempt2"))
-sys.path.insert(0, ATTEMPT2_DIR)
+# swin_explain.py, lung_segmentation.py, and preprocess.py are direct
+# siblings of this file in explainability/.
+sys.path.insert(0, HERE)
 
-from swin_explain2 import (  # noqa: E402
+from swin_explain import (  # noqa: E402
     VitRegressor, apply_val_normalize, StageGradCAM, resize_cam, make_overlay, label,
     rectangular_lung_roi, corner_regions, mass_fraction,
 )
 from lung_segmentation import lung_mask_224  # noqa: E402
-from preprocess_soft import (
+from preprocess import (
     preprocess_image_hard, preprocess_image_soft, boundary_band,
     boundary_gradient_stats, FEATHER_SIGMA_224,
 )
@@ -59,13 +48,13 @@ CHECKPOINT_PATH = f"/path/to/checkpoints/model_fold_{FOLD}_epoch_25.pth"
 PREDICTIONS_PATH = f"/path/to/checkpoints/predictions_fold_{FOLD}.csv"
 PATIENT_DICT_PATH = "/path/to/data/patient_dict.csv"
 N_CASES = 10
-STAGE_IDX = 1  # 28x28 tokens -- the stage attempt2 established as artifact-free-enough
+STAGE_IDX = 1  # 28x28 tokens -- the stage established as artifact-free-enough
 
-# Baseline numbers from attempt2, for the head-to-head report.
+# Baseline numbers for the head-to-head report.
 BASELINE_SEG_MASS_MEAN = 0.326
 BASELINE_SEG_AREA_MEAN = 0.279
 BASELINE_CORNER_MASS_MEAN = 0.066
-PORTABLE_FILM_CASE = "A751083"  # flagged in attempt2 as tracking tubing/grid markers
+PORTABLE_FILM_CASE = "A751083"  # flagged as tracking tubing/grid markers
 
 # Guardrail thresholds for the prediction-consistency gate (Phase A).
 MIN_PEARSON_R = 0.8
@@ -134,7 +123,7 @@ def phase_a_prediction_consistency(model, cases):
     df = pd.DataFrame(rows)
     df.to_csv(os.path.join(DIAG_DIR, "phase_a_prediction_consistency.csv"), index=False)
 
-    # Sanity: pred_hard here should match attempt2/vitfreeze's predictions_fold_1.csv
+    # Sanity: pred_hard here should match the imaging model's predictions_fold_1.csv
     # almost exactly (same preprocessing, same model) -- confirms nothing else broke.
     csv_vs_recomputed_diff = (df["predicted_los_fold1_csv"] - df["pred_hard_preproc"]).abs()
 

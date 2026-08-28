@@ -1,14 +1,11 @@
 """
-Automated lung segmentation for the recompute step, only reached because the
-rectangular-ROI check passed threshold (mean in-lung mass >= ~0.5) for the
-28x28-token Grad-CAM stage.
+Segments the lungs in a chest radiograph using torchxrayvision's pretrained
+ChestX-Det PSPNet (Lian et al., 2021), for quantifying how much Grad-CAM
+attention falls inside the lungs.
 
-Uses torchxrayvision's pretrained ChestX-Det PSPNet (Lian et al. 2021,
-https://github.com/Deepwise-AILab/ChestX-Det-Dataset), already a project
-dependency (vitfreeze.py imports torchxrayvision). Weights are downloaded
-on first use to ~/.torchxrayvision/models_data/ (confirmed working, internet
-reachable from this node) and cached thereafter -- not something we train or
-modify, used strictly read-only for inference.
+Input: a preprocessed chest radiograph image. Model weights are downloaded
+on first use to ~/.torchxrayvision/models_data/ and cached thereafter.
+Output: a combined lung mask and separate left/right lung masks.
 """
 import numpy as np
 import torch

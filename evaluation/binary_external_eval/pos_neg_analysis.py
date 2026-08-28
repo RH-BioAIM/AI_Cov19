@@ -1,3 +1,13 @@
+"""
+Evaluates the imaging model on the Kaggle COVID-19 Radiography Database as a
+binary (COVID-positive vs. normal) classification task. For each fold, the
+predicted length of stay is thresholded at the value that maximizes
+accuracy on this dataset.
+
+Input: chest radiograph images from the COVID and Normal classes of the
+Kaggle dataset, and the imaging model's per-fold checkpoints.
+Output: LOS_histogram.png, LOS_violin_boxplot.png, ROC_curve.png.
+"""
 import os
 import numpy as np
 import pandas as pd

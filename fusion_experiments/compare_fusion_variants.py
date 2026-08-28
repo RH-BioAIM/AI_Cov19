@@ -1,45 +1,17 @@
 """
-Observation study: does richer imaging-to-clinical fusion improve the
-restricted integrated model over the committed single-scalar fusion
-(116 clinical features + 1 imaging-derived predicted_los)?
+Compares four imaging-fusion representations for the restricted integrated
+model, using the same outer 5-fold partition and a fixed XGBoost
+configuration (max_depth=4, eta=0.03, min_child_weight=5) for all variants:
+V0 the scalar predicted length of stay (117 features), V1 the scalar plus a
+16-component PCA of the imaging embeddings (133 features), V2 the scalar
+plus the raw 1024-dimensional embeddings (1141 features), and V3 a
+fold-honest logistic probability in place of the raw scalar (117 features).
+PCA and the probability transform are fit on the other folds only, per
+fold.
 
-Everything here uses the SAME outer 5-fold patient-level partition as the
-committed model (the 'fold' column from all_fold_predictions.csv). To
-isolate "does the imaging representation matter" from "does the
-hyperparameter search matter", all variants below (including a recomputed
-baseline) use FIXED hyperparameters -- the committed integrated model's own
-MODAL nested-CV-selected config (max_depth=4, eta=0.03, min_child_weight=5,
-from build_nested_tuned_models.py) -- rather than re-running the full
-18-combo nested inner-CV search per variant. This is a deliberate scope
-simplification for a bounded observation study, flagged explicitly: it is
-NOT the same procedure that produced the committed 0.871/0.812/0.557
-numbers (which used PER-OUTER-FOLD nested hyperparameter selection). A
-fixed-config recompute of the CURRENT scalar-only fusion (V0 below) is
-included specifically to calibrate how much of any observed difference is
-"fixed-vs-nested-config" noise versus a genuine effect of the fusion
-representation.
-
-Early stopping in all variants below uses the outer test fold itself
-(evals=[(dtest,"eval")]) -- consistent with build_integrated_model.py /
-build_final_models.py's convention (NOT the stricter nested-CV inner-fold
-early-stopping used in build_nested_tuned_models.py for the actually
-committed model). Flagged for the same reason: this is a lighter-weight
-procedure appropriate for an exploratory comparison, not the committed
-pipeline's standard.
-
-Variants:
-  V0 baseline_fixed_config       : clinical(116) + predicted_los            = 117 feat
-  V1 embeddings_pca16_added      : clinical(116) + predicted_los + PCA16(embeddings) = 133 feat
-  V2 embeddings_raw1024_added    : clinical(116) + predicted_los + raw 1024-dim embeddings = 1141 feat
-  V3 probability_instead_of_los  : clinical(116) + fold-honest P(LOS>5) instead of raw predicted_los = 117 feat
-
-PCA (V1) and the logistic probability transform (V3) are fit fold-honestly:
-for each outer fold, fit only on the OTHER folds' data, transform all
-patients (including the held-out fold) with that fold-specific fit -- no
-leakage from the test fold into the transform.
-
-Nothing here is committed or adopted; outputs are observation-only, saved
-under richer_fusion/.
+Input: the clinical feature table and the imaging model's embeddings
+(imaging_embeddings.csv).
+Output: fusion_variant_comparison.csv.
 """
 import os
 import sys
@@ -53,8 +25,7 @@ from lifelines.utils import concordance_index
 from scipy import stats
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-# Staged repo layout: build_integrated_model.py lives at ../integrated/
-# (it lived directly in the parent "revision" directory in the original working tree).
+# build_integrated_model.py lives at ../integrated/.
 INTEGRATED_DIR = os.path.join(os.path.dirname(HERE), "integrated")
 sys.path.insert(0, INTEGRATED_DIR)
 from build_integrated_model import load_shared_cohort, build_feature_matrix  # noqa: E402
@@ -63,13 +34,13 @@ LOS_THRESHOLD = 5
 EMB_DIM = 1024
 PCA_K = 16
 
-# Committed integrated model's MODAL nested-CV-selected config (see build_nested_tuned_models.py log)
+# Committed integrated model's MODAL nested-CV-selected config (see build_tuned_models.py log)
 FIXED_PARAMS = {"objective": "reg:squarederror", "tree_method": "hist", "seed": 42, "nthread": 4,
                 "max_depth": 4, "eta": 0.03, "min_child_weight": 5}
 NUM_BOOST_ROUND = 5000
 EARLY_STOPPING_ROUNDS = 100
 
-# Committed (per-outer-fold nested-CV) numbers, for reference in the report
+# Reference metrics from the nested-CV-tuned integrated model.
 COMMITTED_AUC = 0.871336
 COMMITTED_CIDX = 0.812217
 COMMITTED_SPEC_AT_5DAY = 0.556634  # recall ~0.976 at literal cutoff=5

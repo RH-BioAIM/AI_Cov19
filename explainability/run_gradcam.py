@@ -1,18 +1,14 @@
 """
-Driver for attempt 2. Loads the fold-1 checkpoint read-only, runs stage-2
-(14x14 token) Grad-CAM on the same ~10 fold-1 cases attempt 1 used, and
-produces:
-  - diagnostics/reshape_check.txt      -- geometry verification (task's #1 ask)
-  - diagnostics/sanity_check.csv       -- gradient/activation magnitudes per case
-                                          + pairwise map-correlation matrix
-  - diagnostics/corner_artifact.csv    -- corner-artifact quantification per case
-  - diagnostics/corner_artifact_*.png  -- visual check for a few cases
-  - diagnostics/roi_mass_fraction.csv  -- the quantitative go/no-go metric
-  - overlays/<subject>_*.png           -- CAM overlays for all cases
-  - catalog.csv
+Runs Grad-CAM on a set of representative cases using a Swin backbone
+checkpoint, and quantifies gradient/activation statistics, a corner-region
+artifact check, and in-lung mass fraction against a rectangular ROI and a
+segmentation-based mask.
 
-Does not modify vitfreeze.py or any checkpoint; the checkpoint is loaded
-read-only via torch.load(..., map_location=...) + load_state_dict.
+Input: a per-fold model checkpoint, predictions, and patient image paths.
+Output: diagnostics/reshape_check.txt, diagnostics/sanity_check_stage{n}.csv,
+diagnostics/corner_artifact_stage{n}.csv, diagnostics/roi_mass_fraction.csv,
+diagnostics/segmentation_mass_fraction_stage{n}.csv, per-case overlay
+images, and catalog.csv.
 """
 import os
 import numpy as np
@@ -20,7 +16,7 @@ import pandas as pd
 import torch
 import cv2
 
-from swin_explain2 import (
+from swin_explain import (
     VitRegressor, preprocess_image, apply_val_normalize,
     StageGradCAM, resize_cam, make_overlay, label,
     rectangular_lung_roi, corner_regions, mass_fraction,
@@ -79,7 +75,7 @@ def reshape_geometry_check(model):
     lines.append("")
     lines.append("timm's SwinTransformerStage.forward keeps the token grid in NHWC spatial")
     lines.append("layout throughout (verified against installed timm source, see")
-    lines.append("swin_explain2.py module docstring): each hooked stage output is already")
+    lines.append("swin_explain.py module docstring): each hooked stage output is already")
     lines.append("(B, H, W, C) with H, W in absolute image-grid coordinates -- no manual")
     lines.append("flat-sequence reshape is performed or needed; shift/window bookkeeping is")
     lines.append("resolved internally by the block before it returns.")

@@ -1,6 +1,12 @@
-# Swin Transformer Model for predicting LOS from Stony Brook COVID-19 CR Images
-# Includes stratified cross-validation, preprocessing, training, and per-fold performance logging
+"""
+Trains a Swin Transformer to predict length of stay from chest radiographs,
+with stratified 5-fold cross-validation and per-fold performance logging.
 
+Input: chest radiograph paths and length-of-stay labels from patient_dict.csv.
+Output: per-fold model checkpoints and out-of-fold predictions, written to
+vit_checkpoints/ (model_fold_{fold}_epoch_{epoch}.pth, predictions_fold_{fold}.csv,
+all_fold_predictions.csv).
+"""
 import os
 import numpy as np
 import pandas as pd

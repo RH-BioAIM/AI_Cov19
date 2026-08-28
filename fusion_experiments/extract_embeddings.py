@@ -1,19 +1,14 @@
 """
-Extract Swin backbone embeddings (penultimate-layer features, 1024-dim,
-already globally pooled by timm's backbone(x) call) for all 1341 patients,
-out-of-fold: each patient is embedded using the checkpoint for THEIR OWN
-held-out fold (model_fold_{fold}_epoch_25.pth), mirroring exactly how
-predicted_los in all_fold_predictions.csv was produced (that fold's val
-set). Checkpoints and preprocessing are used read-only -- no training, no
-modification of vitfreeze.py or any checkpoint.
+Extracts the Swin backbone's 1024-dimensional penultimate-layer embeddings
+for every patient, out-of-fold: each patient is embedded using the
+checkpoint for their own held-out fold. Also recomputes the scalar
+predicted length of stay from the same forward pass, as a cross-check
+against all_fold_predictions.csv.
 
-Also re-derives the scalar predicted_los from the same forward pass as a
-built-in cross-check against the committed all_fold_predictions.csv (should
-match to numerical precision -- same weights, same preprocessing, same
-input).
-
-Output: richer_fusion/imaging_embeddings.csv (subjectID, fold,
-predicted_los_check, emb_0 .. emb_1023).
+Input: per-fold model checkpoints, patient image paths, and
+all_fold_predictions.csv.
+Output: imaging_embeddings.csv (subjectID, fold, predicted_los_check,
+emb_0 through emb_1023).
 """
 import os
 import sys
@@ -23,11 +18,10 @@ import pandas as pd
 import torch
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-# Staged repo layout: swin_explain2.py lives at ../explainability/swin_explain2.py
-# (no attempt2/ subdirectory here, unlike the original working tree).
+# swin_explain.py lives at ../explainability/swin_explain.py.
 EXPLAINABILITY_DIR = os.path.normpath(os.path.join(HERE, "..", "explainability"))
 sys.path.insert(0, EXPLAINABILITY_DIR)
-from swin_explain2 import VitRegressor, preprocess_image, apply_val_normalize  # noqa: E402
+from swin_explain import VitRegressor, preprocess_image, apply_val_normalize  # noqa: E402
 
 CHECKPOINT_DIR = "/path/to/checkpoints"
 ALL_FOLD_PRED_PATH = os.path.join(CHECKPOINT_DIR, "all_fold_predictions.csv")

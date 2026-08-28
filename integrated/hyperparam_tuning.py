@@ -1,45 +1,16 @@
 """
-Nested cross-validation hyperparameter search, shared by both restricted
-models (clinical-only, integrated) to remove the tuned-vs-default asymmetry
-identified after the _final run.
+Nested cross-validation hyperparameter search, shared by the restricted
+clinical-only and integrated models. For each outer fold (the shared 5-fold
+patient-level partition), a 4-fold inner cross-validation selects the
+XGBoost configuration with the best mean inner C-index from a grid of
+max_depth in {3, 4, 6}, eta in {0.03, 0.1, 0.3}, and min_child_weight in
+{1, 5} (18 combinations). A model is then refit on the full outer-training
+set with the selected configuration and used to predict the outer test
+fold, producing out-of-fold predictions.
 
-Design (stated explicitly per the task's requirement):
-  - Outer loop: the same shared 5-fold patient-level partition used
-    everywhere else in this revision (the 'fold' column from
-    all_fold_predictions.csv, via build_integrated_model.load_shared_cohort).
-  - For each outer fold f, the outer TEST set (fold == f) is set aside and
-    never touched until the very last step (prediction only).
-  - Inner loop: within the outer TRAINING set (fold != f, i.e. the other 4
-    fold labels), run a 4-fold inner CV -- leave-one-inner-fold-out using
-    those same 4 fold labels as the inner splits -- over every combination
-    in GRID. For each combination, train with early stopping on the inner
-    validation fold and record (mean inner C-index, mean inner RMSE, mean
-    inner best_iteration) across the 4 inner folds.
-  - The combination with the best mean inner C-index is selected for THIS
-    outer fold. A final model for outer fold f is then refit on the FULL
-    outer-training set (all 4 fold labels combined, no further held-out
-    data) using the selected hyperparameters and a FIXED num_boost_round
-    equal to the (rounded) mean inner best_iteration for that combination --
-    deliberately no early stopping in this refit step, since early stopping
-    would require a held-out validation set and the only data left at this
-    point is the outer test fold, which must not be touched. This is what
-    guarantees outer-fold test patients never influence hyperparameter
-    selection OR the number of boosting rounds used.
-  - The refit model predicts on the outer test fold, producing that fold's
-    slice of the OOF predictions -- genuinely out-of-fold, and genuinely
-    untouched by the tuning procedure for that fold.
-
-This is repeated independently per outer fold, so the selected
-hyperparameters CAN differ fold to fold (textbook nested CV -- the point is
-an unbiased estimate of what "search then fit" produces, not a single
-hand-picked config). The per-fold selections and the modal (most frequently
-selected) combination are both reported; the modal combination is what gets
-quoted as "the model's hyperparameters" in the summary report.
-
-Grid: max_depth in {3,4,6} x eta in {0.03,0.1,0.3} x min_child_weight in
-{1,5} = 18 combinations, spanning from the original all-default corner
-(depth=6, eta=0.3, mcw=1) to the Check-3-tuned corner (depth=3, eta=0.03,
-mcw=5).
+Input: a feature matrix, target, and the shared fold assignment.
+Output: out-of-fold predictions, a per-fold selection log, and the modal
+(most frequently selected) hyperparameter combination.
 """
 import itertools
 import numpy as np

@@ -1,15 +1,12 @@
 """
-Fast DeLong algorithm (Sun, X. and Xu, W., 2014. "Fast Implementation of
-DeLong's Algorithm for Comparing the Areas Under Correlated Receiver
-Operating Characteristic Curves." IEEE Signal Processing Letters, 21(11)),
-implementing the covariance structure of DeLong, DeLong & Clarke-Pearson
-(1988). Structural-components / midrank formulation, O(N log N).
+Implements the fast DeLong algorithm (Sun and Xu, 2014, "Fast Implementation
+of DeLong's Algorithm for Comparing the Areas Under Correlated Receiver
+Operating Characteristic Curves," IEEE Signal Processing Letters, 21(11))
+for computing the covariance structure of correlated ROC AUCs and running a
+paired significance test between two AUCs on the same patients.
 
-This module is a from-scratch implementation following the published
-algorithm (the same formulation widely distributed as the
-"compare_auc_delong_xu.py" reference port of R's pROC C++ DeLong code).
-AUC outputs are validated against sklearn.metrics.roc_auc_score in
-delong_test.py before being used for any p-value.
+Provides delong_paired_test and delong_auc_ci, used by the other evaluation
+scripts in this directory.
 """
 import numpy as np
 

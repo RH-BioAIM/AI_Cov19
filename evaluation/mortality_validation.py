@@ -1,10 +1,13 @@
 """
-Mortality-endpoint re-check on the nested-CV per-model-tuned restricted
-integrated model (Option C). Same as step6_mortality_final.py, re-pointed at
-oof_integrated_restricted_nested_tuned.csv. Re-verifies last_status is absent
-from the restricted feature matrix (unchanged from the _final run --
-kidney_transplant still dropped, 117 columns -- but re-checked explicitly
-per the task's requirement rather than assumed carried over).
+Validates the integrated model's length-of-stay-trained severity score
+against in-hospital mortality, an outcome not used as a training feature.
+Confirms the mortality label is absent from the restricted feature matrix
+(117 columns), then computes the mortality AUC of the predicted score and
+compares mortality rates between risk groups.
+
+Input: the nested-CV-tuned integrated model's out-of-fold predictions
+(oof_integrated_restricted_nested_tuned.csv) and the clinical feature table.
+Output: mortality_endpoint_nested_tuned.csv.
 """
 import os
 import numpy as np
@@ -24,7 +27,7 @@ def main():
     assert len(oof) == 1341
 
     print("=" * 70)
-    print("MORTALITY-ENDPOINT CHECK -- nested-CV per-model-tuned integrated model (Option C)")
+    print("MORTALITY-ENDPOINT CHECK -- nested-CV per-model-tuned integrated model")
     print("=" * 70)
 
     df = load_shared_cohort()
@@ -87,7 +90,7 @@ def main():
     out["mortality_auc_ci95_high"] = mort_auc["ci95_high"]
     out["n_deceased_matched_set"] = n_deceased
     out["n_discharged_matched_set"] = n_discharged
-    path = os.path.join(REVISION_DIR, "step6_mortality_endpoint_nested_tuned.csv")
+    path = os.path.join(REVISION_DIR, "mortality_endpoint_nested_tuned.csv")
     out.to_csv(path, index=False)
     print(f"\nSaved {path}")
 

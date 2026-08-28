@@ -1,8 +1,10 @@
 """
-Paired DeLong test on the nested-CV, per-model-tuned restricted predictions
-(Option C) -- the honest, leakage-free-tuning version of the headline
-integrated-vs-clinical comparison. Same pairing logic as step4_delong.py /
-delong_final.py.
+Runs paired DeLong tests comparing the integrated, clinical-only, and
+imaging-only models on the nested-CV-tuned restricted out-of-fold
+predictions.
+
+Input: the nested-CV-tuned out-of-fold predictions for each model.
+Output: delong_results_nested_tuned.csv.
 """
 import os
 import pandas as pd
@@ -52,7 +54,7 @@ def run_comparison(label, name_a, file_a, name_b, file_b):
 
 def main():
     print("=" * 70)
-    print("PAIRED DELONG TEST -- nested-CV per-model-tuned restricted models (Option C)")
+    print("PAIRED DELONG TEST -- nested-CV per-model-tuned restricted models")
     print("=" * 70)
 
     rows = [

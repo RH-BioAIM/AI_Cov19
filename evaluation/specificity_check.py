@@ -1,30 +1,14 @@
 """
-Observation-only check: is the restricted integrated model's low 5-day
-specificity (~0.557) a property of the restricted feature set, or an
-artifact of the nested-CV tuning approach? Compares two hyperparameter
-setups on the IDENTICAL restricted feature set (117 inputs: 116 clinical +
-1 imaging-derived predicted_los, kidney_transplant already dropped) and the
-IDENTICAL shared 5-fold patient-level partition -- the only thing that
-differs between (a) and (b) is the hyperparameters/tuning procedure, so any
-specificity difference is attributable to tuning, not to a confound.
+Compares two XGBoost configurations on the identical restricted feature set
+(117 inputs: 116 clinical plus the imaging-derived predicted length of
+stay) and the identical shared 5-fold partition: default hyperparameters
+(num_boost_round=1000, early_stopping_rounds=5) against the nested-CV-tuned
+configuration, isolating specificity differences attributable to tuning.
 
-Deliberate framing choice, flagged explicitly: setup (a) reproduces the
-ORIGINAL MANUSCRIPT'S HYPERPARAMETER CONFIG (XGBoost defaults, num_boost_
-round=1000, early_stopping_rounds=5, per the user's restated spec) but on
-the CURRENT restricted feature set -- not the original manuscript's full
-129-feature (leaky) set. Using the old feature set would confound "did
-tuning change things" with "did removing leakage change things", which
-defeats the point of this specific check. If a comparison against the
-original leaky-feature-set numbers is wanted, that's a different, separate
-question (already answered by table2_comparison.csv).
-
-(b) is NOT recomputed -- reuses the committed
-oof_integrated_restricted_nested_tuned.csv exactly as-is, per instruction.
-
-Nothing here is retrained into the pipeline, no file outside
-specificity_tuning_check/ is written or modified, and no model-selection-by-
-outcome occurs -- the nested-CV model remains the committed choice
-regardless of what this comparison shows.
+Input: the clinical feature table and the nested-CV-tuned integrated
+model's out-of-fold predictions.
+Output: oof_integrated_restricted_defaults.csv, pooled_metrics_comparison.csv,
+per_fold_specificity_comparison.csv.
 """
 import os
 import numpy as np

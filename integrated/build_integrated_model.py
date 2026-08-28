@@ -1,25 +1,15 @@
 """
-Rebuilt integrated (clinical + imaging) LOS model for the major-revision response.
+Builds clinical-only and integrated (clinical + imaging) length-of-stay
+models with 5-fold cross-validation, for both the full and restricted
+feature sets. The fold assignments are taken from the imaging model's own
+out-of-fold predictions, so all models share the same cross-validation
+partition.
 
-Replaces the old, no-longer-present integrated.py. Fixes vs. that script:
-  - 5-fold, using the SAME fold partition as the imaging model (not a fresh
-    15-fold KFold split).
-  - One clean CV loop producing genuine out-of-fold (OOF) predictions; no
-    second stub loop / stale-model reuse for the ROC computation.
-
-Shared-fold caveat (see run log / report): patient_dict_with_folds.csv is a
-stale artifact whose fold assignments do NOT match the fold assignments
-actually used to produce vit_checkpoints/all_fold_predictions.csv (~20%
-overlap, i.e. chance level for a 5-way split). The imaging model cannot be
-cheaply retrained to match that stale file, so this script treats the 'fold'
-column embedded in all_fold_predictions.csv -- the real, already-trained
-imaging model's own OOF partition -- as the shared ground truth, and builds
-the clinical-only and integrated CV loops on top of that partition instead.
-
-Runs two feature sets (full vs. restricted) for both clinical-only and
-integrated models, plus reformats the imaging-only OOF predictions, and
-writes all outputs (predictions + a metrics summary) into this revision/
-folder.
+Input: the clinical feature table (AllData.csv) and the imaging model's
+out-of-fold predictions (all_fold_predictions.csv), which also supplies the
+shared fold assignment.
+Output: out-of-fold predictions per model (oof_{name}.csv) and a metrics
+summary (metrics_summary.csv).
 """
 import os
 import numpy as np
@@ -37,11 +27,10 @@ XGB_PARAMS = {"objective": "reg:squarederror", "tree_method": "hist", "seed": 42
 NUM_BOOST_ROUND = 1000
 EARLY_STOPPING_ROUNDS = 20
 
-# Approved restricted-feature-set drop list (Step 2 table, section B) plus
-# visit_start_datetime (raw admission timestamp, not modeled directly), plus
-# kidney_transplant (added in the finalization pass: 98.4% missing -- almost
-# entirely imputation, no real signal) = 12 columns total. Names below are as
-# they actually appear in AllData.csv.
+# Columns excluded from the restricted feature set: post-admission
+# consequence/leakage variables, the raw admission timestamp, and
+# kidney_transplant (98.4% missing). 12 columns total, named as they appear
+# in AllData.csv.
 RESTRICTED_DROP_COLS = [
     "visit_concept_name",
     "is_icu",

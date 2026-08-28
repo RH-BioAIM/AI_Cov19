@@ -1,63 +1,17 @@
 """
-Figure 6 (feature-association bar chart), regenerated on the RESTRICTED
-(triage-time-only) feature set so none of the 12 dropped leakage/consequence
-columns (the 11 in build_integrated_model.RESTRICTED_DROP_COLS, including
-kidney_transplant) can appear -- the old version headlined invasive_vent_days
-and Visit Concept Name, both of which are on that drop list.
+Ranks the restricted (triage-time-only) clinical features by concordance
+index against length of stay, and plots the top 12 as a bar chart (Figure
+6). For numeric features, concordance index is computed directly against
+the feature value. For categorical features, it is computed per level and
+the most discriminative level is reported. The reported association is
+max(C, 1-C), a direction-agnostic measure of discriminative strength.
 
---- Methodology note: could not verify the original chart's construction ---
-Searched the accessible filesystem (CR/, gitsevdata/covid-severity/,
-including its Regression/ and model_explainability/ subfolders) for the
-original Figure6.pdf and any script that computes a per-feature association-
-with-LOS bar chart. Found neither -- no such script exists anywhere in this
-checkout, and no manuscript source file is present to check the caption
-against. This is implemented fresh rather than guessed, using this
-project's one consistently-used discriminative-association statistic
-(lifelines concordance_index, the same metric used for every model-level
-result throughout this revision -- imaging, clinical, integrated, DeLong,
-mortality) applied per INDIVIDUAL FEATURE against length_of_stay instead of
-per model:
-
-  - Numeric features (labs, vitals, binarized threshold flags already 0/1 in
-    AllData.csv): concordance_index(length_of_stay, feature_value), computed
-    on the subset of patients with a non-missing value for that feature.
-  - Categorical features (multi-level flags like htn_v, or nominal fields
-    like gender/encounter type): one-hot encoded (excluding the explicit
-    "nan"/missing level -- a feature's *missingness pattern* being the
-    reported "association" would be uninterpretable on a chart like this),
-    concordance_index computed per level, the feature's score is the best
-    (most discriminative) level, and that level is reported alongside it.
-  - Because concordance_index is direction-agnostic in neither direction by
-    default (a feature that decreases with LOS is just as informative as one
-    that increases), the reported association is max(C, 1-C) -- i.e.
-    discriminative strength regardless of direction, consistent with reading
-    a bar chart of "how associated is this feature with LOS" rather than a
-    signed correlation. Direction is reported in the underlying CSV for
-    anyone who wants it.
-  - Features with a single non-missing level (no variance -- e.g.
-    covid19_statuses, constant "positive" in this cohort) are dropped from
-    ranking (undefined C-index).
-
-Flagging this prominently: if the manuscript's original Figure 6 used a
-different statistic (e.g. mutual information, a univariate regression
-coefficient, or Spearman correlation), this reproduction will rank features
-differently. The instruction was to confirm the original methodology before
-recomputing; that confirmation was not possible because no original artifact
-exists in this checkout. Recommend cross-checking against whatever produced
-the original chart (if it lives outside this repository) before treating the
-ranking as final.
-
-Similarly, "keep the numeric-threshold encoding notes from the original
-caption" could not be done literally -- the original caption text is not
-accessible either. The caption note below is generated fresh from the
-column-name encoding convention itself (e.g. "Sodium_above145" -> "Sodium >
-145"), using step7_feature_table.py's own humanize_binned_flag() parser, for
-whichever bars in the final top-12 are pre-binarized threshold flags.
-
-Pure computation on existing data (AllData.csv via build_integrated_model's
-loader) -- no model retraining.
+Input: the clinical feature table (AllData.csv) and the TCIA data
+dictionary.
+Output: figure6_feature_association_full.csv, Figure6.pdf, Figure6.png.
 """
 import os
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -65,8 +19,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from lifelines.utils import concordance_index
 
-from build_integrated_model import load_shared_cohort, build_feature_matrix, RESTRICTED_DROP_COLS
-from step7_feature_table import get_dictionary, dict_name_to_alldata_name, readable_name, humanize_binned_flag
+# build_integrated_model.py and feature_table.py live in ../integrated/.
+HERE = os.path.dirname(os.path.abspath(__file__))
+INTEGRATED_DIR = os.path.normpath(os.path.join(HERE, "..", "integrated"))
+sys.path.insert(0, INTEGRATED_DIR)
+from build_integrated_model import load_shared_cohort, build_feature_matrix, RESTRICTED_DROP_COLS  # noqa: E402
+from feature_table import get_dictionary, dict_name_to_alldata_name, readable_name, humanize_binned_flag  # noqa: E402
 
 REVISION_DIR = os.path.dirname(os.path.abspath(__file__))
 FIG_DIR = os.path.join(REVISION_DIR, "figures")
@@ -76,7 +34,7 @@ TOP_N = 12
 
 def build_readable_map():
     """alldata_column_name -> human-readable label, via the same TCIA
-    dictionary + name-cleaning logic used for step7_feature_table.csv."""
+    dictionary + name-cleaning logic used for feature_table.csv."""
     tcia_dict = get_dictionary()
     from build_integrated_model import ALLDATA_PATH
     alldata_cols = pd.read_csv(ALLDATA_PATH, nrows=0).columns.tolist()
@@ -117,12 +75,9 @@ def feature_association(X, y):
                     best_c = score
                     best_level = lv if report_level else None
                     best_level_n = int(indicator.sum())
-                    # for a binary True/False-style flag, record whether the
-                    # more-discriminative level was the "abnormal"/flagged
-                    # state (True) or the majority "normal" state (False) --
-                    # several of these turn out to be driven by the majority
-                    # class on a skewed flag, not the rare abnormal one, and
-                    # that's worth knowing before writing a caption.
+                    # For a binary True/False flag, record whether the
+                    # more-discriminative level was the flagged (True) state
+                    # or the majority (False) state.
                     best_level_is_true = (lv == "True") if not report_level else None
             rows.append({"feature": col, "association": best_c, "level": best_level,
                           "feature_type": "categorical", "n": n_present,

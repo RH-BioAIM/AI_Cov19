@@ -1,12 +1,11 @@
 """
-Step 4: prerequisite (tuned clinical-only-restricted baseline) + paired DeLong
-test on ROC AUCs (LOS > 5 days as the binary severity label), on the shared
-patient_dict_with_folds-equivalent partition (verified in Check 1).
+Trains a tuned clinical-only-restricted XGBoost baseline and runs paired
+DeLong tests on ROC AUC, using length of stay greater than 5 days as the
+binary severity label, on the shared 5-fold patient-level partition.
 
-Prerequisite does NOT overwrite oof_clinical_only_restricted.csv (the
-default-hyperparameter run from Step 3) -- writes a new
-oof_clinical_only_restricted_tuned.csv instead, and that tuned file is what
-DeLong is run against for the restricted comparisons.
+Input: the clinical feature table and the imaging and integrated models'
+out-of-fold predictions.
+Output: oof_clinical_only_restricted_tuned.csv, delong_results.csv.
 """
 import os
 import numpy as np
@@ -20,7 +19,7 @@ from delong import delong_paired_test
 REVISION_DIR = os.path.dirname(os.path.abspath(__file__))
 LOS_THRESHOLD = 5
 
-# Winning Check 3 config: eta=0.03, max_depth=3, min_child_weight=5, C-index 0.781
+# XGBoost configuration: eta=0.03, max_depth=3, min_child_weight=5.
 TUNED_PARAMS = {"objective": "reg:squarederror", "tree_method": "hist", "seed": 42,
                  "eta": 0.03, "max_depth": 3, "min_child_weight": 5}
 NUM_BOOST_ROUND = 5000

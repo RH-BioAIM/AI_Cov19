@@ -1,30 +1,14 @@
 """
-Diagnose the restricted integrated (nested-tuned) model's low specificity
-(0.557) at the 5-day decision threshold. Analysis only on
-oof_integrated_restricted_nested_tuned.csv -- no retraining, no retuning, no
-change to the committed nested-CV results. Any "recalibration" below is
-fit fold-honestly (only on other folds' predictions, never on the fold it's
-applied to) purely to answer "would recalibration help", not to produce a
-new deployed model.
+Analyzes the integrated model's specificity at the 5-day decision threshold:
+a calibration curve, a characterization of the false positives, an
+alternative score-cutoff analysis at fixed recall, and a fold-honest
+isotonic recalibration check. No retraining.
 
-Four parts, in order:
-  1. Calibration curve: predicted vs actual LOS, with particular attention to
-     bias right at the 5-day boundary (systematic over-prediction there would
-     directly inflate false positives).
-  2. False-positive characterization: are the 274 FPs borderline (predicted
-     just over 5) or confidently wrong (predicted far above 5)?
-  3. Threshold-on-score vs threshold-on-LOS: what specificity is achievable
-     at fixed recall (0.95, 0.97) by choosing a different SCORE cutoff,
-     holding the model exactly as-is -- this is a decision-rule question, not
-     a modeling one.
-  4. Fold-honest isotonic recalibration: does actually recalibrating the
-     score (fit only on the other 4 folds each time) change the achievable
-     specificity-at-fixed-recall beyond what a plain cutoff change in part 3
-     already gets? (Prediction: it shouldn't, by construction -- isotonic
-     regression is a monotonic transform of the score, and specificity-at-
-     fixed-recall depends only on the score's RANKING, which a monotonic
-     transform cannot change. This part exists to confirm that theoretical
-     expectation empirically rather than assert it.)
+Input: the nested-CV-tuned integrated model's out-of-fold predictions.
+Output: calibration_by_decile.csv, calibration_near_boundary.csv,
+calibration_curve.png, fp_predicted_los_distribution.csv,
+false_positives_detail.csv, threshold_on_score_vs_fixed_recall.csv,
+isotonic_recalibration_result.csv, recalibrated_predictions_fold_honest.csv.
 """
 import os
 import numpy as np

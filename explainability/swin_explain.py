@@ -1,72 +1,13 @@
 """
-Attempt 2 at Swin explainability for the canonical imaging model (vitfreeze.py).
+Grad-CAM for the Swin Transformer imaging model, computed at a configurable
+intermediate Swin stage (higher spatial resolution than the final 7x7
+stage) to preserve spatial specificity. Also includes the model definition
+and preprocessing used to load and run the imaging model.
 
-Context: attempt 1 (../swin_explain.py, ../run_explainability.py) showed two
-failure modes, judged only by eye:
-  (1) attention rollout on the last stage (7x7 tokens) was washed out /
-      near-uniform.
-  (2) Grad-CAM on the last stage (7x7 tokens) was centrality-biased -- a
-      single hot 7x7 token upsampled 32x to 224x224 necessarily smears across
-      the whole central chest -- and showed a warm-corner artifact in most
-      cases.
-
-This attempt drops attention rollout (out of scope for the two hypotheses
-being tested) and fixes Grad-CAM by:
-  (a) pulling it from an earlier, higher-resolution Swin stage instead of the
-      final 7x7 stage, so the map has spatial specificity, and
-  (b) explicitly checking whether the warm-corner artifact tracks the
-      preprocess_image hard-masking boundary (img <= 500 -> 0) rather than
-      anatomy.
-
-VitRegressor and preprocess_image are copied verbatim from vitfreeze.py (not
-imported), same rationale as attempt 1: vitfreeze.py is a top-level script
-with import-time side effects (loads patient_dict.csv, runs the full training
-loop), so copying the two pure, side-effect-free pieces is the only safe way
-to reuse its exact preprocessing without retriggering training. Diffed
-line-by-line against vitfreeze.py's preprocess_image/VitRegressor -- identical
-except preprocess_image here also returns the pre-CLAHE 0/nonzero mask, needed
-for the corner-artifact check, and the CLAHE grayscale image, needed for
-overlays.
-
---- Stage/reshape correctness (the detail the task called out as most
-important) ---
-
-timm.models.swin_transformer.SwinTransformer (installed version, see
-site-packages/timm/models/swin_transformer.py) keeps the token grid in NHWC
-spatial layout end-to-end: `SwinTransformerBlock.forward` takes and returns
-(B, H, W, C) directly, only flattening to (num_windows*B, window_size**2, C)
-*inside* `_attn` for the windowed attention matmul, then undoing that via
-`window_reverse` before returning -- shift/un-shift (`torch.roll`) and
-window partition/reverse are handled internally by the block itself. So
-`model.backbone.layers[s]` (an `SwinTransformerStage`) both takes and
-produces an already-spatial (B, H, W, C) tensor -- there is no flat token
-sequence to manually reshape back into a 2D grid at the point where we hook
-in. This is verified empirically below (`verify_stage_geometry`), not just
-assumed from reading the source: we print the hooked tensor's H, W every run
-and assert H*W equals the token count implied by the architecture
-(patch_grid=56x56 for 224x224/patch4, halved by PatchMerging at the start of
-every stage after the first).
-
-swin_base_patch4_window7_224: depths=(2,2,18,2), downsample = (i > 0) for
-stage i, so per-stage OUTPUT resolution/channels are:
-    stage 0: 56x56, C=128   (no patch merging before it)
-    stage 1: 28x28, C=256
-    stage 2: 14x14, C=512   <- pulled here (STAGE_IDX=2)
-    stage 3:  7x7,  C=1024  (attempt 1's stage; too coarse -> centrality bias)
-In common Swin-paper 1-indexed terminology (stage 1..4) this is "stage 3".
-
-Window/shift correctness at stage 2: input_resolution=14x14 > window_size=7,
-so (unlike attempt 1's final stage) shifted windows are genuinely active here
-(blocks alternate shift_size=(0,0) and (3,3), from
-SwinTransformerStage.__init__: `shift_size=0 if i % 2 == 0 else window_size//2`
-for the 18 blocks). We do NOT need to reason about this for Grad-CAM: shift
-and un-shift both happen inside `_attn`/`window_reverse` before the block
-returns its (B,H,W,C) output, so the hooked activation is already correctly
-laid out in absolute image-grid coordinates regardless of which blocks were
-shifted internally. This is the actual resolution to the "must handle
-windowed/shifted structure" concern -- not a reshape we perform, but a
-verification that timm's block already resolves it before the tensor reaches
-our hook.
+Provides VitRegressor, preprocess_image, apply_val_normalize, StageGradCAM,
+and helpers for overlay generation and region-based mass-fraction
+quantification. Used by run_gradcam.py, run_gradcam_final.py, and
+fusion_experiments/extract_embeddings.py.
 """
 import numpy as np
 import torch
@@ -77,7 +18,7 @@ from skimage.transform import resize
 import timm
 
 # ---------------------------------------------------------------------------
-# Copied verbatim (pixel path) from vitfreeze.py / attempt 1's swin_explain.py
+# Preprocessing and model definition, matching imaging/train_swin.py.
 # ---------------------------------------------------------------------------
 
 def preprocess_image(path):
@@ -129,8 +70,9 @@ class VitRegressor(nn.Module):
 
 
 def apply_val_normalize(img_tensor):
-    """val_transforms in vitfreeze.py: Resize((224,224)) [no-op here, already
-    224x224 from preprocess_image] then Normalize(mean=0.5, std=0.5)."""
+    """Matches imaging/train_swin.py's validation transform: Resize((224,224))
+    (a no-op here, already 224x224 from preprocess_image) then
+    Normalize(mean=0.5, std=0.5)."""
     return (img_tensor - 0.5) / 0.5
 
 

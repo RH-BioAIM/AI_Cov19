@@ -1,40 +1,18 @@
 """
-Observation study (extends richer_fusion/compare_fusion_variants.py): does
-REPLACING the scalar imaging feature (predicted_los) with the Swin
-embeddings -- rather than ADDING embeddings on top of it -- improve the
-restricted integrated model?
+Compares replacing the scalar imaging feature (predicted length of stay)
+with the Swin embeddings, rather than adding embeddings on top of it, for
+the restricted integrated model. Uses the same outer 5-fold partition and
+fixed XGBoost configuration (max_depth=4, eta=0.03, min_child_weight=5) as
+compare_fusion_variants.py. Variants: R1 clinical (116 features) plus a
+16-component PCA of the embeddings (132 features), R2 clinical plus the raw
+1024-dimensional embeddings (1140 features), and R3 clinical plus a k-component
+PCA for k in {8, 32, 64}. None of the variants include the scalar
+predicted_los feature. PCA is fit on the other folds only, per fold.
 
-The committed model fuses 116 clinical features + 1 scalar imaging
-predicted_los = 117 features. The prior richer_fusion run ADDED embeddings
-on top of that scalar (V1/V2 below, reused for reference). This run REMOVES
-the scalar entirely and uses embeddings as the SOLE imaging input, to test
-whether the embeddings carry severity signal that the LOS-regression
-bottleneck (a single scalar trained to predict length-of-stay, not
-discharge-threshold classification) discards.
-
-Same OOF embeddings (richer_fusion/imaging_embeddings.csv), same outer
-5-fold patient-level partition (the committed 'fold' column), and the same
-FIXED hyperparameters as the prior run (the committed integrated model's own
-modal nested-CV config: max_depth=4, eta=0.03, min_child_weight=5) for
-direct comparability -- same scope-simplification caveat as before: this is
-NOT a fresh per-variant nested-CV search, so small deltas versus the
-committed 0.871/0.812/0.557 numbers partly reflect that simplification, not
-only the fusion representation. The prior run's V0 (fixed-config recompute
-of the CURRENT scalar-only fusion) already calibrated that gap at ~0.001
-AUC / ~0.02 specificity, so it's used below as the fair "same-config"
-baseline instead of the committed numbers directly.
-
-Variants (clinical=116 features in every case, feature count below = clinical + imaging cols):
-  R1 pca16_replace   : clinical(116) + PCA16(embeddings)               = 132 feat, NO predicted_los
-  R2 raw1024_replace : clinical(116) + raw 1024-dim embeddings         = 1140 feat, NO predicted_los
-  R3 pca{8,32,64}_replace : clinical(116) + PCA-k(embeddings), k in {8,32,64}, NO predicted_los
-
-PCA is fit fold-honestly: for each outer fold, fit only on the OTHER folds'
-embeddings, transform all patients (incl. the held-out fold) with that
-fold-specific basis -- no leakage from the test fold into the transform.
-
-Nothing here is committed or adopted; outputs are observation-only, saved
-under richer_fusion/replace_variants/.
+Input: the clinical feature table and the imaging model's embeddings
+(imaging_embeddings.csv).
+Output: replace_variant_comparison.csv, reference_rows.csv,
+full_comparison_with_references.csv.
 """
 import os
 import sys
@@ -51,8 +29,7 @@ from scipy import stats
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FUSION_DIR = os.path.dirname(HERE)  # fusion_experiments/
-# Staged repo layout: build_integrated_model.py lives at fusion_experiments/../integrated/
-# (it lived two levels up, directly in "revision", in the original working tree).
+# build_integrated_model.py lives in ../../integrated/.
 INTEGRATED_DIR = os.path.join(os.path.dirname(FUSION_DIR), "integrated")
 sys.path.insert(0, INTEGRATED_DIR)
 from build_integrated_model import load_shared_cohort, build_feature_matrix  # noqa: E402
