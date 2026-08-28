@@ -1,0 +1,16 @@
+kagglehub
+lifelines
+matplotlib
+nibabel
+numpy
+opencv-python
+pandas
+scikit-image
+scikit-learn
+scipy
+seaborn
+timm
+torch
+torchvision
+torchxrayvision
+xgboost
