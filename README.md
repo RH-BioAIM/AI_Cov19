@@ -33,38 +33,38 @@ github_staging/
 ### `preprocessing/`
 | File | Description |
 |---|---|
-| `importkaggle.py` | Downloads the Kaggle COVID-19 Radiography Database (`tawsifurrahman/covid19-radiography-database`) via `kagglehub` and copies it to a local directory. |
+| `importkaggle.py` | Downloads the Kaggle COVID-19 Radiography Database and copies it to a local directory. |
 | `pos_neg_database.sbatch` | SLURM launcher for `importkaggle.py`. |
 
 ### `imaging/`
 | File | Description |
 |---|---|
-| `train_swin.py` | Trains the Swin Transformer imaging model (`swin_base_patch4_window7_224` backbone plus a `Dropout`→`Linear` regression head) to predict length of stay from chest radiographs. Includes NIfTI loading and preprocessing (background removal, CLAHE contrast enhancement), stratified 5-fold cross-validation, and per-fold checkpoint/metric logging. |
+| `train_swin.py` | Trains a Swin Transformer to predict length of stay from chest radiographs, with stratified 5-fold cross-validation. |
 | `train_swin.sbatch` | SLURM launcher for `train_swin.py`. |
 
 ### `integrated/`
 | File | Description |
 |---|---|
-| `build_integrated_model.py` | Core shared module. Loads the matched clinical+imaging cohort (using the imaging model's own cross-validation fold assignments as the shared ground-truth partition) and builds clinical-only and integrated (clinical+imaging) feature matrices for both the full and leakage-restricted feature sets. Imported by most other scripts in this repository. |
+| `build_integrated_model.py` | Core shared module. Builds the clinical-only and integrated feature matrices for the full and restricted feature sets. Used by most other scripts here. |
 | `build_integrated_model.sbatch` | SLURM launcher. |
-| `build_tuned_models.py` | Runs nested-cross-validation hyperparameter tuning for the restricted clinical-only and integrated models, producing the final out-of-fold predictions behind the paper's headline numbers. |
-| `build_final_models.py` | Finalization pass. Drops the high-missingness `kidney_transplant` feature and applies a consistent tuned XGBoost configuration to both the clinical-only-restricted and integrated-restricted models. |
-| `hyperparam_tuning.py` | Shared nested-CV hyperparameter search (outer 5-fold, inner 4-fold grid search) used by `build_tuned_models.py`. |
-| `feature_table.py` | Builds the candidate clinical-variable and missingness table (Supplementary Table S1) from the TCIA data dictionary and the modeled cohort. |
+| `build_tuned_models.py` | Runs nested cross-validation hyperparameter tuning for the restricted clinical-only and integrated models. |
+| `build_final_models.py` | Trains the restricted clinical-only and integrated models with a tuned XGBoost configuration. |
+| `hyperparam_tuning.py` | Nested cross-validation hyperparameter search used by `build_tuned_models.py`. |
+| `feature_table.py` | Builds the candidate clinical-variable and missingness table (Supplementary Table S1). |
 
 ### `evaluation/`
 | File | Description |
 |---|---|
-| `delong.py` | From-scratch implementation of the fast DeLong algorithm (Sun & Xu, 2014) for comparing correlated ROC AUCs. Cross-checked against scikit-learn's AUC computation. |
-| `delong_analysis.py` | Trains the tuned clinical-only-restricted baseline and runs the initial paired DeLong significance tests. |
-| `delong_comparison.py` | Paired DeLong tests (integrated vs. clinical-only, integrated vs. imaging-only) on the final nested-CV-tuned restricted predictions, the paper's headline significance results. |
-| `mortality_validation.py` | Validates the LOS-trained severity score against in-hospital mortality, an outcome never used as a training feature, on the final nested-tuned predictions. |
-| `threshold_sweep.py` | Regenerates **Supplementary Table S2**: classification metrics (accuracy, sensitivity, specificity, precision, F1, ROC AUC) swept across LOS decision thresholds 3 to 10 days, for the final nested-tuned integrated model. |
-| `classification_metrics.py` | Full classification-metrics table at three decision thresholds (5-day fixed, 6.71-day Youden-optimal, 7-day) for all three final restricted models (imaging-only, clinical-only, integrated). |
-| `table2_comparison.py` | Builds the manuscript's Table II: original (full/leaky feature set) vs. new restricted-feature-set model metrics, side by side. |
-| `specificity_analysis.py` | Diagnostic analysis of the integrated model's specificity at the 5-day decision threshold (calibration curve, false-positive characterization, alternative operating points, fold-honest recalibration check). |
-| `specificity_check.py` | Tests whether the model's specificity is a property of the restricted feature set or an artifact of the hyperparameter-tuning procedure, by comparing configurations on the identical feature set and cross-validation partition. |
-| `severity_eval/sev_eval.py` | External evaluation of the imaging model on the MIDRC-RICORD-1c severity-stratified dataset (mild vs. severe COVID-19). Reports F1, ROC AUC, and a threshold-sweep classification-metrics table. |
+| `delong.py` | Implements the fast DeLong algorithm for comparing correlated ROC AUCs. |
+| `delong_analysis.py` | Trains the tuned clinical-only-restricted baseline and runs paired DeLong significance tests. |
+| `delong_comparison.py` | Runs paired DeLong tests on the nested-CV-tuned restricted models, the paper's headline significance results. |
+| `mortality_validation.py` | Validates the LOS-trained severity score against in-hospital mortality. |
+| `threshold_sweep.py` | Regenerates **Supplementary Table S2**: classification metrics across LOS decision thresholds 3 to 10 days. |
+| `classification_metrics.py` | Classification-metrics table at three decision thresholds for all three restricted models. |
+| `table2_comparison.py` | Builds the manuscript's Table II: full feature set vs. restricted feature set model metrics. |
+| `specificity_analysis.py` | Diagnostic analysis of the integrated model's specificity at the 5-day decision threshold. |
+| `specificity_check.py` | Tests whether the model's specificity depends on the feature set or the hyperparameter-tuning procedure. |
+| `severity_eval/sev_eval.py` | External evaluation of the imaging model on the MIDRC-RICORD-1c severity-stratified dataset. |
 | `severity_eval/sev_eval.sbatch` | SLURM launcher. |
 | `binary_external_eval/pos_neg_analysis.py` | External binary (COVID-positive vs. negative) evaluation of the imaging model on the Kaggle COVID-19 Radiography Database. |
 | `binary_external_eval/pos_neg_analysis.sbatch` | SLURM launcher. |
@@ -72,27 +72,27 @@ github_staging/
 ### `fusion_experiments/`
 | File | Description |
 |---|---|
-| `extract_embeddings.py` | Extracts the Swin backbone's 1024-dimensional penultimate-layer embeddings, out-of-fold, for every patient. |
+| `extract_embeddings.py` | Extracts the Swin backbone's image embeddings for every patient, out-of-fold. |
 | `extract_embeddings.sbatch` | SLURM launcher. |
-| `compare_fusion_variants.py` | Ablation study comparing the committed scalar (predicted-LOS) imaging fusion against variants that *add* PCA-reduced or raw 1024-dim imaging embeddings, or a probability-recast imaging feature, on top of the scalar. |
+| `compare_fusion_variants.py` | Ablation study comparing the scalar imaging fusion against variants that add PCA-reduced or raw imaging embeddings. |
 | `fusion_variant_comparison.csv` | Saved results of the above comparison. |
-| `replace_variants/compare_replace_variants.py` | Extends the above: tests *replacing* (rather than augmenting) the scalar imaging feature with embeddings at several PCA dimensionalities (8, 16, 32, 64) and the raw 1024-dim vector. |
-| `replace_variants/full_comparison_with_references.csv` | Saved results, including reference rows for the committed model and the "added-embedding" variants. |
+| `replace_variants/compare_replace_variants.py` | Tests replacing (rather than adding to) the scalar imaging feature with embeddings at several PCA dimensionalities. |
+| `replace_variants/full_comparison_with_references.csv` | Saved results, with reference rows from the added-embedding comparison. |
 
 ### `explainability/`
 | File | Description |
 |---|---|
-| `swin_explain.py` | Grad-CAM implementation adapted for the Swin Transformer's hierarchical token stages (the refined second of three attempts, after an initial attempt's failure modes). Also provides the model-loading and preprocessing helper functions reused by `fusion_experiments/extract_embeddings.py`. |
-| `run_gradcam.py` | Driver script for the Grad-CAM analysis above and its diagnostics (corner-artifact checks, in-lung mass-fraction quantification). |
-| `lung_segmentation.py` | Wraps a pretrained `torchxrayvision` lung-segmentation model, used to quantify how much Grad-CAM attention actually falls inside the lungs versus a chance baseline. |
-| `preprocess.py` | Two preprocessing variants: the model's actual "hard" background-masking preprocessing, and a "soft" feathered-edge variant, used to test whether a preprocessing artifact was biasing the Grad-CAM attention maps. |
-| `run_gradcam_final.py` | Final Grad-CAM attempt. Re-runs the analysis under the corrected ("soft") preprocessing and reports the lung-localization quantification and conclusion. |
+| `swin_explain.py` | Grad-CAM implementation adapted for the Swin Transformer's hierarchical token stages. Also provides model-loading and preprocessing helpers reused by `fusion_experiments/extract_embeddings.py`. |
+| `run_gradcam.py` | Driver script for the Grad-CAM analysis. |
+| `lung_segmentation.py` | Wraps a pretrained `torchxrayvision` lung-segmentation model, used to quantify Grad-CAM attention inside the lungs. |
+| `preprocess.py` | Provides the standard background-masking preprocessing and a feathered-edge variant used in the Grad-CAM analysis. |
+| `run_gradcam_final.py` | Runs the Grad-CAM analysis under the corrected preprocessing and reports the lung-localization quantification. |
 
 ### `plotting/`
 | File | Description |
 |---|---|
-| `figure4_roc_confusion.py` | Generates Figure 4 (ROC curve plus confusion matrix) from the final nested-tuned integrated model. |
-| `figure6_feature_association.py` | Generates Figure 6 (top-12 clinical-feature bar chart, ranked by concordance-index association with length of stay). |
+| `figure4_roc_confusion.py` | Generates Figure 4: ROC curve and confusion matrix for the integrated model. |
+| `figure6_feature_association.py` | Generates Figure 6: the top-12 clinical-feature association bar chart. |
 
 ---
 
@@ -119,15 +119,15 @@ The data, checkpoint, and intermediate-output paths hardcoded in these scripts (
 
 ## Reproducing key results
 
-The pipeline runs in the following order, with each stage's outputs feeding the next:
+The pipeline runs in this order:
 
-1. **Preprocess / acquire data** (`preprocessing/`). Obtain the three datasets listed under *Data availability* and set local paths.
-2. **Train the imaging model** (`imaging/train_swin.py`). Trains the Swin Transformer on chest radiographs to predict length of stay, producing per-fold checkpoints and out-of-fold predictions.
-3. **Build the clinical and integrated models** (`integrated/`). `build_integrated_model.py` builds the shared cohort and baseline models. `hyperparam_tuning.py` and `build_tuned_models.py` produce the final nested-CV-tuned models. `build_final_models.py` applies the finalized feature set and configuration.
-4. **Evaluation** (`evaluation/`). DeLong significance tests (`delong_analysis.py`, `delong_comparison.py`), the length-of-stay threshold sweep behind **Supplementary Table S2** (`threshold_sweep.py`), mortality-endpoint validation (`mortality_validation.py`), and the classification-metrics tables (`classification_metrics.py`, `table2_comparison.py`, `specificity_analysis.py`, `specificity_check.py`).
-5. **External evaluations.** Severity-stratified evaluation on MIDRC-RICORD-1c (`evaluation/severity_eval/`) and binary positive/negative evaluation on the Kaggle radiography dataset (`evaluation/binary_external_eval/`).
-6. **Fusion experiments** (`fusion_experiments/`). Ablation study of alternative imaging-fusion representations (embeddings vs. the scalar predicted-LOS feature).
-7. **Figures** (`plotting/`). Regenerates the manuscript's Figure 4 and Figure 6 from the final model outputs.
+1. **Preprocess data** (`preprocessing/`). Obtain the datasets under *Data availability* and set local paths.
+2. **Train the imaging model** (`imaging/`). Trains the Swin Transformer to predict length of stay.
+3. **Build the clinical and integrated models** (`integrated/`). Builds and tunes the clinical-only and integrated models.
+4. **Evaluation** (`evaluation/`). DeLong tests, the length-of-stay threshold sweep, mortality validation, and classification-metrics tables.
+5. **External evaluations** (`evaluation/severity_eval/`, `evaluation/binary_external_eval/`). Severity-stratified and binary external evaluation.
+6. **Fusion experiments** (`fusion_experiments/`). Ablation study of alternative imaging-fusion representations.
+7. **Figures** (`plotting/`). Regenerates Figure 4 and Figure 6.
 
 ## License
 
