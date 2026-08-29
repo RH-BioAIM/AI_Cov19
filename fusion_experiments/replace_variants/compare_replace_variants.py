@@ -46,24 +46,24 @@ EARLY_STOPPING_ROUNDS = 100
 COMMITTED = {
     "variant": "REFERENCE_committed_scalar_nested_cv", "auc": 0.871336, "c_index": 0.812217,
     "specificity": 0.556634, "recall": 0.976, "tn": 344, "fp": 274, "fn": 17, "tp": 706,
-    "per_fold_spec_sd": np.nan, "note": "per-outer-fold nested-CV tuned, NOT fixed-config -- see docstring",
+    "per_fold_spec_sd": np.nan, "note": "per-outer-fold nested-CV tuned, not fixed-config",
 }
-# From the prior ADDED-embeddings run (richer_fusion/fusion_variant_comparison.csv),
-# fixed-config, same partition -- included as the fair same-config baselines/comparators.
+# Added-embeddings variants under the same fixed config and partition,
+# included as same-config baselines for comparison.
 V0_BASELINE_FIXED_CONFIG = {
     "variant": "REFERENCE_V0_scalar_only_fixed_config", "auc": 0.870440, "c_index": 0.812620,
     "specificity": 0.537217, "recall": 0.971, "tn": None, "fp": None, "fn": None, "tp": None,
-    "per_fold_spec_sd": 0.0478, "note": "prior run -- same fixed config, scalar predicted_los only, no embeddings",
+    "per_fold_spec_sd": 0.0478, "note": "fixed config, scalar predicted_los only, no embeddings",
 }
 V1_PCA16_ADDED = {
     "variant": "REFERENCE_V1_scalar_plus_pca16_added", "auc": 0.868019, "c_index": 0.811373,
     "specificity": 0.548544, "recall": 0.9696, "tn": None, "fp": None, "fn": None, "tp": None,
-    "per_fold_spec_sd": 0.0577, "note": "prior run -- scalar KEPT, PCA16 embeddings added on top",
+    "per_fold_spec_sd": 0.0577, "note": "scalar retained, PCA16 embeddings added on top",
 }
 V2_RAW1024_ADDED = {
     "variant": "REFERENCE_V2_scalar_plus_raw1024_added", "auc": 0.862334, "c_index": 0.806608,
     "specificity": 0.512945, "recall": 0.9820, "tn": None, "fp": None, "fn": None, "tp": None,
-    "per_fold_spec_sd": 0.0867, "note": "prior run -- scalar KEPT, raw 1024-dim embeddings added on top",
+    "per_fold_spec_sd": 0.0867, "note": "scalar retained, raw 1024-dim embeddings added on top",
 }
 
 
