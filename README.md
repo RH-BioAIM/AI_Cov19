@@ -17,7 +17,7 @@ Length of hospital stay (LOS) is the training target for both the imaging and in
 ## Repository structure
 
 ```
-github_staging/
+AI_Cov19/
 ├── preprocessing/            data acquisition
 ├── imaging/                  Swin Transformer imaging branch (training)
 ├── integrated/                clinical (XGBoost) + integrated (clinical+imaging) models
