@@ -93,10 +93,6 @@ Users must obtain each dataset independently under its own data-use terms and se
 
 This code was developed and run on an HPC cluster using the SLURM scheduler. The `.sbatch` files included alongside their corresponding Python scripts are the actual launcher scripts used, provided as examples. 
 
-## Configuration / paths
-
-The data, checkpoint, and intermediate-output paths hardcoded in these scripts (for example `ALLDATA_PATH`, `IMAGING_PRED_PATH`, `PATIENT_DICT_PATH`, checkpoint directories, and the `.sbatch` files' `--output`/`--mail-user` lines) are placeholders left over from the original development environment.
-
 
 
 ## Contact
