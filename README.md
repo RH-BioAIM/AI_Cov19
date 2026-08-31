@@ -109,23 +109,11 @@ Users must obtain each dataset independently under its own data-use terms and se
 - Python 3.11
 - Install dependencies: `pip install -r requirements.txt`
 
-This code was developed and run on an HPC cluster using the SLURM scheduler. The `.sbatch` files included alongside their corresponding Python scripts are the actual launcher scripts used, provided as examples. They contain placeholder cluster paths, a placeholder output-log path, and a placeholder `--mail-user` email that you will need to edit for your own environment (or you can ignore them entirely and invoke the Python scripts directly).
+This code was developed and run on an HPC cluster using the SLURM scheduler. The `.sbatch` files included alongside their corresponding Python scripts are the actual launcher scripts used, provided as examples. 
 
 ## Configuration / paths
 
-The data, checkpoint, and intermediate-output paths hardcoded in these scripts (for example `ALLDATA_PATH`, `IMAGING_PRED_PATH`, `PATIENT_DICT_PATH`, checkpoint directories, and the `.sbatch` files' `--output`/`--mail-user` lines) are placeholders left over from the original development environment. **Before running anything, edit these to point at your own local copies of the datasets described above and your own working/output directories.**
-
-## Reproducing key results
-
-The pipeline runs in this order:
-
-1. **Preprocess data** (`preprocessing/`). Obtain the datasets under *Data availability* and set local paths.
-2. **Train the imaging model** (`imaging/`). Trains the Swin Transformer to predict length of stay.
-3. **Build the clinical and integrated models** (`integrated/`). Builds and tunes the clinical-only and integrated models.
-4. **Evaluation** (`evaluation/`). DeLong tests, the length-of-stay threshold sweep, mortality validation, and classification-metrics tables.
-5. **External evaluations** (`evaluation/severity_eval/`, `evaluation/binary_external_eval/`). Severity-stratified and binary external evaluation.
-6. **Fusion experiments** (`fusion_experiments/`). Ablation study of alternative imaging-fusion representations.
-7. **Figures** (`plotting/`). Regenerates Figure 4 and Figure 6.
+The data, checkpoint, and intermediate-output paths hardcoded in these scripts (for example `ALLDATA_PATH`, `IMAGING_PRED_PATH`, `PATIENT_DICT_PATH`, checkpoint directories, and the `.sbatch` files' `--output`/`--mail-user` lines) are placeholders left over from the original development environment.
 
 
 
