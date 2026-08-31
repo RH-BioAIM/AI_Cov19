@@ -1,7 +1,5 @@
 # Predicting COVID-19 Severity Using a Multimodal AI Model with Cross-Institutional Evaluation of Imaging Performance
 
-**Journal:** IEEE Open Journal of Engineering in Medicine and Biology (OJEMB)
-**Manuscript:** OJEMB-00026-2026
 **Authors:** Hunter Lau, Ryan Lang, Hamed Akbari (Santa Clara University)
 
 ---
