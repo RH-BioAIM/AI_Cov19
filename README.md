@@ -6,7 +6,7 @@
 
 ## Overview
 
-This repository contains the analysis code for a dual-branch multimodal framework that predicts COVID-19 severity from two inputs. Chest radiographs are processed by a Swin Transformer imaging branch, and structured clinical variables (labs, vitals, comorbidities, presenting symptoms) are processed by an XGBoost clinical branch. The two branches are combined via feature-level fusion: the imaging branch's predicted length of stay is used as a single engineered feature alongside the clinical variables in the fused (integrated) model.
+This repository contains the analysis code for a dual-branch multimodal framework that predicts COVID-19 severity from two inputs. Chest radiographs are processed by a Swin Transformer imaging branch, and structured clinical variables are processed by an XGBoost clinical branch. The two branches are combined via feature-level fusion: the imaging branch's predicted length of stay is used as a single engineered feature alongside the clinical variables in the fused (integrated) model.
 
 Length of hospital stay (LOS) is the training target for both the imaging and integrated models, thresholded post hoc into a binary severity label.
 
@@ -15,8 +15,8 @@ Length of hospital stay (LOS) is the training target for both the imaging and in
 ```
 AI_Cov19/
 ├── preprocessing/            data acquisition
-├── imaging/                  Swin Transformer imaging branch (training)
-├── integrated/                clinical (XGBoost) + integrated (clinical+imaging) models
+├── imaging/                  Swin Transformer imaging branch
+├── integrated/                clinical (XGBoost) + integrated models
 ├── evaluation/                DeLong tests, threshold sweep, mortality validation,
 │   ├── severity_eval/         metrics tables, and external evaluations
 │   └── binary_external_eval/
@@ -94,7 +94,3 @@ Users must obtain each dataset independently under its own data-use terms and se
 This code was developed and run on an HPC cluster using the SLURM scheduler. The `.sbatch` files included alongside their corresponding Python scripts are the actual launcher scripts used, provided as examples. 
 
 
-
-## Contact
-
-For questions about this repository or the underlying study, see the corresponding author listed in the paper.
