@@ -1,13 +1,6 @@
 """
-Grad-CAM for the Swin Transformer imaging model, computed at a configurable
-intermediate Swin stage (higher spatial resolution than the final 7x7
-stage) to preserve spatial specificity. Also includes the model definition
-and preprocessing used to load and run the imaging model.
-
-Provides VitRegressor, preprocess_image, apply_val_normalize, StageGradCAM,
-and helpers for overlay generation and region-based mass-fraction
-quantification. Used by run_gradcam.py, run_gradcam_final.py, and
-fusion_experiments/extract_embeddings.py.
+Provides Grad-CAM for the Swin Transformer imaging model, along with the
+model definition and preprocessing used to run it.
 """
 import numpy as np
 import torch

@@ -1,14 +1,6 @@
 """
-Builds the manuscript's Table II: classification metrics for the imaging,
-clinical-only, and integrated models on the full feature set, alongside the
-same models on the restricted (triage-time-only) feature set. The imaging
-model uses the same feature set in both columns, since it does not take
-clinical features as input.
-
-Input: out-of-fold prediction files for the restricted-feature-set metrics.
-The full-feature-set ("original") metrics are hardcoded published values
-from the original submission, not read from any file.
-Output: table2_comparison.csv.
+Builds the manuscript's Table II, comparing model metrics on the full and
+restricted feature sets.
 """
 import os
 import pandas as pd

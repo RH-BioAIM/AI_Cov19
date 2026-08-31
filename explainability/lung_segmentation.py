@@ -1,11 +1,6 @@
 """
-Segments the lungs in a chest radiograph using torchxrayvision's pretrained
-ChestX-Det PSPNet (Lian et al., 2021), for quantifying how much Grad-CAM
-attention falls inside the lungs.
-
-Input: a preprocessed chest radiograph image. Model weights are downloaded
-on first use to ~/.torchxrayvision/models_data/ and cached thereafter.
-Output: a combined lung mask and separate left/right lung masks.
+Segments the lungs in a chest radiograph using a pretrained
+lung-segmentation model.
 """
 import numpy as np
 import torch

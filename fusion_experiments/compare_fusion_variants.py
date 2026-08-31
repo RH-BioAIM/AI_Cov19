@@ -1,17 +1,6 @@
 """
 Compares four imaging-fusion representations for the restricted integrated
-model, using the same outer 5-fold partition and a fixed XGBoost
-configuration (max_depth=4, eta=0.03, min_child_weight=5) for all variants:
-V0 the scalar predicted length of stay (117 features), V1 the scalar plus a
-16-component PCA of the imaging embeddings (133 features), V2 the scalar
-plus the raw 1024-dimensional embeddings (1141 features), and V3 a
-fold-honest logistic probability in place of the raw scalar (117 features).
-PCA and the probability transform are fit on the other folds only, per
-fold.
-
-Input: the clinical feature table and the imaging model's embeddings
-(imaging_embeddings.csv).
-Output: fusion_variant_comparison.csv.
+model.
 """
 import os
 import sys

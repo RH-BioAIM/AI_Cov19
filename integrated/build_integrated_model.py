@@ -1,15 +1,6 @@
 """
-Builds clinical-only and integrated (clinical + imaging) length-of-stay
-models with 5-fold cross-validation, for both the full and restricted
-feature sets. The fold assignments are taken from the imaging model's own
-out-of-fold predictions, so all models share the same cross-validation
-partition.
-
-Input: the clinical feature table (AllData.csv) and the imaging model's
-out-of-fold predictions (all_fold_predictions.csv), which also supplies the
-shared fold assignment.
-Output: out-of-fold predictions per model (oof_{name}.csv) and a metrics
-summary (metrics_summary.csv).
+Builds the clinical-only and integrated length-of-stay models for the full
+and restricted feature sets.
 """
 import os
 import numpy as np

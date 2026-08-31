@@ -1,14 +1,6 @@
 """
-Compares two XGBoost configurations on the identical restricted feature set
-(117 inputs: 116 clinical plus the imaging-derived predicted length of
-stay) and the identical shared 5-fold partition: default hyperparameters
-(num_boost_round=1000, early_stopping_rounds=5) against the nested-CV-tuned
-configuration, isolating specificity differences attributable to tuning.
-
-Input: the clinical feature table and the nested-CV-tuned integrated
-model's out-of-fold predictions.
-Output: oof_integrated_restricted_defaults.csv, pooled_metrics_comparison.csv,
-per_fold_specificity_comparison.csv.
+Compares two XGBoost configurations on the restricted feature set to test
+whether specificity depends on the feature set or the tuning procedure.
 """
 import os
 import numpy as np

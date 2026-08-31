@@ -1,11 +1,6 @@
 """
-Generates Figure 4: an ROC curve (panel a) and a confusion matrix at the
-5-day length-of-stay decision threshold (panel b) for the restricted
+Generates Figure 4: an ROC curve and confusion matrix for the restricted
 integrated model.
-
-Input: the nested-CV-tuned integrated model's out-of-fold predictions
-(oof_integrated_restricted_nested_tuned.csv).
-Output: Figure4.pdf, Figure4.png.
 """
 import os
 import numpy as np

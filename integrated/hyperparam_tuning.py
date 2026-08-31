@@ -1,16 +1,6 @@
 """
-Nested cross-validation hyperparameter search, shared by the restricted
-clinical-only and integrated models. For each outer fold (the shared 5-fold
-patient-level partition), a 4-fold inner cross-validation selects the
-XGBoost configuration with the best mean inner C-index from a grid of
-max_depth in {3, 4, 6}, eta in {0.03, 0.1, 0.3}, and min_child_weight in
-{1, 5} (18 combinations). A model is then refit on the full outer-training
-set with the selected configuration and used to predict the outer test
-fold, producing out-of-fold predictions.
-
-Input: a feature matrix, target, and the shared fold assignment.
-Output: out-of-fold predictions, a per-fold selection log, and the modal
-(most frequently selected) hyperparameter combination.
+Runs the nested cross-validation hyperparameter search shared by the
+restricted clinical-only and integrated models.
 """
 import itertools
 import numpy as np

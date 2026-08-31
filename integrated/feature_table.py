@@ -1,13 +1,6 @@
 """
-Builds the candidate clinical-variable and missingness table (Supplementary
-Table S1) from the TCIA data dictionary and the modeled cohort. Classifies
-each variable by category and role (selected for the restricted feature
-set, dropped for leakage/consequence, or non-predictor) and computes its
-missingness rate in the cohort.
-
-Input: the TCIA clinical data dictionary (fetched from its public URL) and
-the clinical feature table (AllData.csv).
-Output: feature_table.csv.
+Builds the candidate clinical-variable and missingness table
+(Supplementary Table S1).
 """
 import os
 import re

@@ -1,14 +1,6 @@
 """
-Analyzes the integrated model's specificity at the 5-day decision threshold:
-a calibration curve, a characterization of the false positives, an
-alternative score-cutoff analysis at fixed recall, and a fold-honest
-isotonic recalibration check. No retraining.
-
-Input: the nested-CV-tuned integrated model's out-of-fold predictions.
-Output: calibration_by_decile.csv, calibration_near_boundary.csv,
-calibration_curve.png, fp_predicted_los_distribution.csv,
-false_positives_detail.csv, threshold_on_score_vs_fixed_recall.csv,
-isotonic_recalibration_result.csv, recalibrated_predictions_fold_honest.csv.
+Analyzes the integrated model's specificity at the 5-day decision
+threshold.
 """
 import os
 import numpy as np

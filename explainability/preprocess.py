@@ -1,17 +1,6 @@
 """
-Two preprocessing variants for the imaging model's input pipeline.
-
-`preprocess_image_hard` matches imaging/train_swin.py's preprocessing: pixels
-at or below the background threshold are zeroed, then CLAHE is applied.
-`preprocess_image_soft` is identical except the foreground/background
-boundary in the CLAHE output is feathered with a Gaussian blur of the hard
-mask (feather_sigma=8.0 pixels at 224x224), rather than left as a sharp
-edge.
-
-Input: a NIfTI chest radiograph path.
-Output: a preprocessed image tensor. `boundary_band` and
-`boundary_gradient_stats` measure the gradient across the mask boundary for
-either variant.
+Provides two preprocessing variants for the imaging model's input
+pipeline: preprocess_image_hard and preprocess_image_soft.
 """
 import numpy as np
 import torch

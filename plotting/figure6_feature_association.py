@@ -1,14 +1,6 @@
 """
-Ranks the restricted (triage-time-only) clinical features by concordance
-index against length of stay, and plots the top 12 as a bar chart (Figure
-6). For numeric features, concordance index is computed directly against
-the feature value. For categorical features, it is computed per level and
-the most discriminative level is reported. The reported association is
-max(C, 1-C), a direction-agnostic measure of discriminative strength.
-
-Input: the clinical feature table (AllData.csv) and the TCIA data
-dictionary.
-Output: figure6_feature_association_full.csv, Figure6.pdf, Figure6.png.
+Ranks the restricted clinical features by association with length of stay
+and plots the top 12 as a bar chart (Figure 6).
 """
 import os
 import sys

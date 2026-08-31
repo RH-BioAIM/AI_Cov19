@@ -30,19 +30,16 @@ AI_Cov19/
 | File | Description |
 |---|---|
 | `importkaggle.py` | Downloads the Kaggle COVID-19 Radiography Database and copies it to a local directory. |
-| `pos_neg_database.sbatch` | SLURM launcher for `importkaggle.py`. |
 
 ### `imaging/`
 | File | Description |
 |---|---|
 | `train_swin.py` | Trains a Swin Transformer to predict length of stay from chest radiographs, with stratified 5-fold cross-validation. |
-| `train_swin.sbatch` | SLURM launcher for `train_swin.py`. |
 
 ### `integrated/`
 | File | Description |
 |---|---|
-| `build_integrated_model.py` | Core shared module. Builds the clinical-only and integrated feature matrices for the full and restricted feature sets. Used by most other scripts here. |
-| `build_integrated_model.sbatch` | SLURM launcher. |
+| `build_integrated_model.py` | Core shared module: builds the clinical-only and integrated feature matrices for the full and restricted feature sets. |
 | `build_tuned_models.py` | Runs nested cross-validation hyperparameter tuning for the restricted clinical-only and integrated models. |
 | `build_final_models.py` | Trains the restricted clinical-only and integrated models with a tuned XGBoost configuration. |
 | `hyperparam_tuning.py` | Nested cross-validation hyperparameter search used by `build_tuned_models.py`. |
@@ -53,7 +50,7 @@ AI_Cov19/
 |---|---|
 | `delong.py` | Implements the fast DeLong algorithm for comparing correlated ROC AUCs. |
 | `delong_analysis.py` | Trains the tuned clinical-only-restricted baseline and runs paired DeLong significance tests. |
-| `delong_comparison.py` | Runs paired DeLong tests on the nested-CV-tuned restricted models, the paper's headline significance results. |
+| `delong_comparison.py` | Runs paired DeLong tests on the nested-CV-tuned restricted models. |
 | `mortality_validation.py` | Validates the LOS-trained severity score against in-hospital mortality. |
 | `threshold_sweep.py` | Regenerates **Supplementary Table S2**: classification metrics across LOS decision thresholds 3 to 10 days. |
 | `classification_metrics.py` | Classification-metrics table at three decision thresholds for all three restricted models. |
@@ -61,20 +58,29 @@ AI_Cov19/
 | `specificity_analysis.py` | Diagnostic analysis of the integrated model's specificity at the 5-day decision threshold. |
 | `specificity_check.py` | Tests whether the model's specificity depends on the feature set or the hyperparameter-tuning procedure. |
 | `severity_eval/sev_eval.py` | External evaluation of the imaging model on the MIDRC-RICORD-1c severity-stratified dataset. |
-| `severity_eval/sev_eval.sbatch` | SLURM launcher. |
-| `binary_external_eval/pos_neg_analysis.py` | External binary (COVID-positive vs. negative) evaluation of the imaging model on the Kaggle COVID-19 Radiography Database. |
-| `binary_external_eval/pos_neg_analysis.sbatch` | SLURM launcher. |
+| `binary_external_eval/pos_neg_analysis.py` | External binary evaluation of the imaging model on the Kaggle COVID-19 Radiography Database. |
 
 ### `fusion_experiments/`
 | File | Description |
 |---|---|
 | `extract_embeddings.py` | Extracts the Swin backbone's image embeddings for every patient, out-of-fold. |
-| `extract_embeddings.sbatch` | SLURM launcher. |
 | `compare_fusion_variants.py` | Ablation study comparing the scalar imaging fusion against variants that add PCA-reduced or raw imaging embeddings. |
-| `fusion_variant_comparison.csv` | Saved results of the above comparison. |
-| `replace_variants/compare_replace_variants.py` | Tests replacing (rather than adding to) the scalar imaging feature with embeddings at several PCA dimensionalities. |
-| `replace_variants/full_comparison_with_references.csv` | Saved results, with reference rows from the added-embedding comparison. |
+| `replace_variants/compare_replace_variants.py` | Tests replacing the scalar imaging feature with embeddings at several PCA dimensionalities. |
 
+### `explainability/`
+| File | Description |
+|---|---|
+| `swin_explain.py` | Provides Grad-CAM for the Swin Transformer imaging model, along with the model definition and preprocessing used to run it. |
+| `run_gradcam.py` | Runs Grad-CAM on a set of representative cases and quantifies the resulting attention maps. |
+| `lung_segmentation.py` | Segments the lungs in a chest radiograph using a pretrained lung-segmentation model. |
+| `preprocess.py` | Provides two preprocessing variants for the imaging model's input pipeline. |
+| `run_gradcam_final.py` | Tests whether feathering the imaging preprocessing boundary changes the model's predictions and Grad-CAM lung localization. |
+
+### `plotting/`
+| File | Description |
+|---|---|
+| `figure4_roc_confusion.py` | Generates Figure 4: an ROC curve and confusion matrix for the restricted integrated model. |
+| `figure6_feature_association.py` | Ranks the restricted clinical features by association with length of stay and plots the top 12 as a bar chart (Figure 6). |
 
 ## Data availability
 
@@ -91,6 +97,4 @@ Users must obtain each dataset independently under its own data-use terms and se
 - Python 3.11
 - Install dependencies: `pip install -r requirements.txt`
 
-This code was developed and run on an HPC cluster using the SLURM scheduler. The `.sbatch` files included alongside their corresponding Python scripts are the actual launcher scripts used, provided as examples. 
-
-
+This code was run on an HPC cluster. Paths hardcoded in the scripts are placeholders and should be edited for your own environment.

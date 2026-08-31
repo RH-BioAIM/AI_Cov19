@@ -1,12 +1,6 @@
 """
-Implements the fast DeLong algorithm (Sun and Xu, 2014, "Fast Implementation
-of DeLong's Algorithm for Comparing the Areas Under Correlated Receiver
-Operating Characteristic Curves," IEEE Signal Processing Letters, 21(11))
-for computing the covariance structure of correlated ROC AUCs and running a
-paired significance test between two AUCs on the same patients.
-
-Provides delong_paired_test and delong_auc_ci, used by the other evaluation
-scripts in this directory.
+Implements the fast DeLong algorithm for comparing correlated ROC AUCs.
+Provides delong_paired_test and delong_auc_ci.
 """
 import numpy as np
 

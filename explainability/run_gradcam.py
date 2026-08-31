@@ -1,14 +1,6 @@
 """
-Runs Grad-CAM on a set of representative cases using a Swin backbone
-checkpoint, and quantifies gradient/activation statistics, a corner-region
-artifact check, and in-lung mass fraction against a rectangular ROI and a
-segmentation-based mask.
-
-Input: a per-fold model checkpoint, predictions, and patient image paths.
-Output: diagnostics/reshape_check.txt, diagnostics/sanity_check_stage{n}.csv,
-diagnostics/corner_artifact_stage{n}.csv, diagnostics/roi_mass_fraction.csv,
-diagnostics/segmentation_mass_fraction_stage{n}.csv, per-case overlay
-images, and catalog.csv.
+Runs Grad-CAM on a set of representative cases and quantifies the
+resulting attention maps.
 """
 import os
 import numpy as np

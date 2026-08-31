@@ -1,14 +1,6 @@
 """
-Selects XGBoost hyperparameters via nested cross-validation, separately for
-the restricted clinical-only model (116 features) and the restricted
-integrated model (117 features), and fits each with its selected
-configuration. Full-feature-set models are not processed by this script.
-
-Input: the clinical feature table and the imaging model's out-of-fold
-predictions.
-Output: oof_clinical_only_restricted_nested_tuned.csv,
-oof_integrated_restricted_nested_tuned.csv, hyperparam_search_log.csv,
-hyperparam_search_full_grid.csv, metrics_summary_nested_tuned.csv.
+Selects XGBoost hyperparameters via nested cross-validation for the
+restricted clinical-only and integrated models.
 """
 import os
 import numpy as np

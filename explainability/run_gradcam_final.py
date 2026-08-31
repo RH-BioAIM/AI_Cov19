@@ -1,19 +1,6 @@
 """
-Tests whether feathering the imaging preprocessing's foreground/background
-boundary changes the Swin backbone's predictions and Grad-CAM lung
-localization at the 28x28-token stage. Phase A confirms the predicted
-length of stay is consistent between the standard and feathered
-preprocessing before any Grad-CAM comparison is trusted. Phase B
-regenerates Grad-CAM and the sanity, corner-artifact, and
-segmentation-mass measurements under the feathered preprocessing.
-
-Input: a per-fold model checkpoint, predictions, and patient image paths.
-Output: diagnostics/phase_a_prediction_consistency.csv,
-diagnostics/boundary_gradient_check.csv,
-diagnostics/sanity_check_corrected.csv,
-diagnostics/corner_artifact_corrected.csv,
-diagnostics/segmentation_mass_fraction_corrected.csv,
-diagnostics/final_head_to_head.txt, and overlay images.
+Tests whether feathering the imaging preprocessing boundary changes the
+model's predictions and Grad-CAM lung localization.
 """
 import os
 import sys

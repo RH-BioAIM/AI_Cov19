@@ -1,14 +1,6 @@
 """
-Trains the restricted clinical-only and integrated models using the
-restricted feature set (kidney_transplant dropped, 116 clinical features)
-and the tuned XGBoost configuration (eta=0.03, max_depth=3,
-min_child_weight=5, num_boost_round=5000, early_stopping_rounds=100).
-Full-feature-set models are not processed by this script.
-
-Input: the clinical feature table and the imaging model's out-of-fold
-predictions (all_fold_predictions.csv).
-Output: oof_clinical_only_restricted_final.csv,
-oof_integrated_restricted_final.csv.
+Trains the restricted clinical-only and integrated models with a tuned
+XGBoost configuration.
 """
 import os
 import sys

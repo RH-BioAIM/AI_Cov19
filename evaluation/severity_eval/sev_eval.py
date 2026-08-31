@@ -1,12 +1,6 @@
 """
 Evaluates the imaging model on the MIDRC-RICORD-1c severity-stratified
-dataset (mild/level 1 vs. severe/level 2 COVID-19), and selects the
-length-of-stay decision threshold with the best macro F1.
-
-Input: chest radiograph paths and severity labels
-(a_ricord_image_severity.csv) and the imaging model's per-fold checkpoints.
-Output: los_eval_fold_metrics.csv, threshold_accuracies.csv,
-accuracy_vs_threshold.png, roc_curve.png, best_threshold_predictions.csv.
+dataset.
 """
 import os
 import torch

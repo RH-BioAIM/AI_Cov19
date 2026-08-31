@@ -1,9 +1,6 @@
 """
 Downloads the COVID-19 Radiography Database from Kaggle and copies it to a
 local directory.
-
-Input: the Kaggle dataset tawsifurrahman/covid19-radiography-database.
-Output: a local copy of the dataset at the configured target directory.
 """
 import kagglehub
 import shutil

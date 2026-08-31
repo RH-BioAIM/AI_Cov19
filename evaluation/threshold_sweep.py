@@ -1,12 +1,7 @@
 """
-Computes classification metrics (accuracy, sensitivity, specificity,
-precision, F1, ROC AUC, confusion-matrix counts) for the integrated model
-at each length-of-stay decision threshold from 3 to 10 days. Generates
+Computes classification metrics for the integrated model across
+length-of-stay decision thresholds from 3 to 10 days. Generates
 Supplementary Table S2.
-
-Input: the nested-CV-tuned integrated model's out-of-fold predictions
-(oof_integrated_restricted_nested_tuned.csv).
-Output: regenerate_s2_output.csv.
 """
 import os
 

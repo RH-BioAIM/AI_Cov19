@@ -1,18 +1,6 @@
 """
-Compares replacing the scalar imaging feature (predicted length of stay)
-with the Swin embeddings, rather than adding embeddings on top of it, for
-the restricted integrated model. Uses the same outer 5-fold partition and
-fixed XGBoost configuration (max_depth=4, eta=0.03, min_child_weight=5) as
-compare_fusion_variants.py. Variants: R1 clinical (116 features) plus a
-16-component PCA of the embeddings (132 features), R2 clinical plus the raw
-1024-dimensional embeddings (1140 features), and R3 clinical plus a k-component
-PCA for k in {8, 32, 64}. None of the variants include the scalar
-predicted_los feature. PCA is fit on the other folds only, per fold.
-
-Input: the clinical feature table and the imaging model's embeddings
-(imaging_embeddings.csv).
-Output: replace_variant_comparison.csv, reference_rows.csv,
-full_comparison_with_references.csv.
+Compares replacing the scalar imaging feature with Swin embeddings for the
+restricted integrated model.
 """
 import os
 import sys

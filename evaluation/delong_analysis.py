@@ -1,11 +1,6 @@
 """
-Trains a tuned clinical-only-restricted XGBoost baseline and runs paired
-DeLong tests on ROC AUC, using length of stay greater than 5 days as the
-binary severity label, on the shared 5-fold patient-level partition.
-
-Input: the clinical feature table and the imaging and integrated models'
-out-of-fold predictions.
-Output: oof_clinical_only_restricted_tuned.csv, delong_results.csv.
+Trains a tuned clinical-only-restricted baseline and runs paired DeLong
+significance tests.
 """
 import os
 import numpy as np

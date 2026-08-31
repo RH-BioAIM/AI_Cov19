@@ -1,14 +1,5 @@
 """
-Extracts the Swin backbone's 1024-dimensional penultimate-layer embeddings
-for every patient, out-of-fold: each patient is embedded using the
-checkpoint for their own held-out fold. Also recomputes the scalar
-predicted length of stay from the same forward pass, as a cross-check
-against all_fold_predictions.csv.
-
-Input: per-fold model checkpoints, patient image paths, and
-all_fold_predictions.csv.
-Output: imaging_embeddings.csv (subjectID, fold, predicted_los_check,
-emb_0 through emb_1023).
+Extracts the Swin backbone's embeddings for every patient, out-of-fold.
 """
 import os
 import sys

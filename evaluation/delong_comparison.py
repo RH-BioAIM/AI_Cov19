@@ -1,10 +1,6 @@
 """
 Runs paired DeLong tests comparing the integrated, clinical-only, and
-imaging-only models on the nested-CV-tuned restricted out-of-fold
-predictions.
-
-Input: the nested-CV-tuned out-of-fold predictions for each model.
-Output: delong_results_nested_tuned.csv.
+imaging-only models on the nested-CV-tuned restricted predictions.
 """
 import os
 import pandas as pd

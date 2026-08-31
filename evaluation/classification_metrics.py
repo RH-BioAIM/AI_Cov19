@@ -1,13 +1,7 @@
 """
-Computes classification metrics (accuracy, sensitivity, specificity,
-precision, F1) at three length-of-stay decision thresholds (5-day fixed,
-6.71-day Youden-optimal, 7-day) for the imaging-only, clinical-only, and
-integrated restricted models. The ground-truth severity label is fixed at
-length of stay greater than 5 days for all rows. ROC AUC and C-index are
-threshold-independent and computed once per model.
-
-Input: the out-of-fold predictions for each restricted model.
-Output: classification_metrics.csv.
+Computes classification metrics at three length-of-stay decision
+thresholds for the restricted imaging-only, clinical-only, and integrated
+models.
 """
 import os
 import pandas as pd
