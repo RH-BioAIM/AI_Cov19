@@ -77,22 +77,6 @@ AI_Cov19/
 | `replace_variants/compare_replace_variants.py` | Tests replacing (rather than adding to) the scalar imaging feature with embeddings at several PCA dimensionalities. |
 | `replace_variants/full_comparison_with_references.csv` | Saved results, with reference rows from the added-embedding comparison. |
 
-### `explainability/`
-| File | Description |
-|---|---|
-| `swin_explain.py` | Grad-CAM implementation adapted for the Swin Transformer's hierarchical token stages. Also provides model-loading and preprocessing helpers reused by `fusion_experiments/extract_embeddings.py`. |
-| `run_gradcam.py` | Driver script for the Grad-CAM analysis. |
-| `lung_segmentation.py` | Wraps a pretrained `torchxrayvision` lung-segmentation model, used to quantify Grad-CAM attention inside the lungs. |
-| `preprocess.py` | Provides the standard background-masking preprocessing and a feathered-edge variant used in the Grad-CAM analysis. |
-| `run_gradcam_final.py` | Runs the Grad-CAM analysis under the corrected preprocessing and reports the lung-localization quantification. |
-
-### `plotting/`
-| File | Description |
-|---|---|
-| `figure4_roc_confusion.py` | Generates Figure 4: ROC curve and confusion matrix for the integrated model. |
-| `figure6_feature_association.py` | Generates Figure 6: the top-12 clinical-feature association bar chart. |
-
----
 
 ## Data availability
 
