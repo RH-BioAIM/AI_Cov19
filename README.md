@@ -4,15 +4,13 @@
 **Manuscript:** OJEMB-00026-2026
 **Authors:** Hunter Lau, Ryan Lang, Hamed Akbari (Santa Clara University)
 
-**Citation:** [citation to be added upon publication]
-
 ---
 
 ## Overview
 
 This repository contains the analysis code for a dual-branch multimodal framework that predicts COVID-19 severity from two inputs. Chest radiographs are processed by a Swin Transformer imaging branch, and structured clinical variables (labs, vitals, comorbidities, presenting symptoms) are processed by an XGBoost clinical branch. The two branches are combined via feature-level fusion: the imaging branch's predicted length of stay is used as a single engineered feature alongside the clinical variables in the fused (integrated) model.
 
-Length of hospital stay (LOS) is the training target for both the imaging and integrated models, thresholded post hoc into a binary severity label. The resulting severity score is additionally validated against an outcome the model was never trained on (in-hospital mortality), and evaluated on two external imaging datasets independent of the primary training cohort.
+Length of hospital stay (LOS) is the training target for both the imaging and integrated models, thresholded post hoc into a binary severity label.
 
 ## Repository structure
 
@@ -129,9 +127,7 @@ The pipeline runs in this order:
 6. **Fusion experiments** (`fusion_experiments/`). Ablation study of alternative imaging-fusion representations.
 7. **Figures** (`plotting/`). Regenerates Figure 4 and Figure 6.
 
-## License
 
-[license to be determined]
 
 ## Contact
 
