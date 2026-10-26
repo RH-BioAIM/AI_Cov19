@@ -25,8 +25,8 @@ PUBLISHED_TABLE = {
 
 FILES = {
     "imaging_only": "oof_imaging_only.csv",
-    "clinical_only": "oof_clinical_only_restricted_tuned.csv",
-    "integrated": "oof_integrated_restricted.csv",
+    "clinical_only": "oof_clinical_only_restricted_nested_tuned.csv",
+    "integrated": "oof_integrated_restricted_nested_tuned.csv",
 }
 MODEL_DISPLAY = {"integrated": "Integrated", "imaging_only": "Chest X-ray (imaging)", "clinical_only": "Clinical Data"}
 METRICS = ["accuracy", "precision", "recall", "f1", "specificity", "c_index", "roc_auc"]

@@ -1,4 +1,4 @@
-# Predicting COVID-19 Severity Using a Multimodal AI Model with Cross-Institutional Evaluation of Imaging Performance
+# Predicting COVID-19 Severity Using a Multimodal AI Model with Cross-Dataset Evaluation of Imaging Performance
 
 **Authors:** Hunter Lau, Ryan Lang, Hamed Akbari (Santa Clara University)
 
@@ -80,7 +80,7 @@ AI_Cov19/
 | File | Description |
 |---|---|
 | `figure4_roc_confusion.py` | Generates Figure 4: an ROC curve and confusion matrix for the restricted integrated model. |
-| `figure6_feature_association.py` | Ranks the restricted clinical features by association with length of stay and plots the top 12 as a bar chart (Figure 6). |
+| `figure6_feature_association.py` | Ranks the restricted clinical features by association with length of stay and plots the top 12 as a bar chart (Figure 6). Descriptive analysis computed on the full cohort. This ranking is separate from the fixed predictor set and is not used to select model inputs. |
 
 ## Data availability
 

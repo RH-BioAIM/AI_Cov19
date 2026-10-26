@@ -1,6 +1,8 @@
 """
 Ranks the restricted clinical features by association with length of stay
-and plots the top 12 as a bar chart (Figure 6).
+and plots the top 12 as a bar chart (Figure 6). Descriptive analysis
+computed on the full cohort. This ranking is separate from the fixed
+predictor set and is not used to select model inputs.
 """
 import os
 import sys

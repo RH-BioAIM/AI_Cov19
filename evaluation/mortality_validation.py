@@ -88,11 +88,11 @@ def main():
     print(f"\nSaved {path}")
 
     print("\n" + "=" * 70)
-    print("THREE-WAY -- mortality AUC")
+    print("MORTALITY AUC")
     print("=" * 70)
-    print(f"(a) ORIGINAL (untuned default, kt included):        AUC = 0.8085 (95% CI [0.7794, 0.8375])")
-    print(f"(b) FORCED-SYMMETRIC (kt dropped, both = clinical config): AUC = 0.8266 (95% CI [0.8004, 0.8528])")
-    print(f"(c) NESTED-TUNED (kt dropped, per-model optimum):    AUC = {mort_auc['auc']:.4f} "
+    print(f"FORCED-SYMMETRIC (both models on the clinical configuration): AUC = 0.8266 "
+          f"(95% CI [0.8004, 0.8528])")
+    print(f"NESTED-TUNED (per-model optimum):                             AUC = {mort_auc['auc']:.4f} "
           f"(95% CI [{mort_auc['ci95_low']:.4f}, {mort_auc['ci95_high']:.4f}])")
 
 
