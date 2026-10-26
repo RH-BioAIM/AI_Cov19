@@ -1,9 +1,9 @@
 """
 Computes ROC AUC with bootstrap confidence intervals and threshold metrics
-for the fold model and cutoff selected on each external dataset's own
-labels, from the saved per-image predictions. Patient-clustered resampling
-is used for MIDRC-RICORD-1c and image-level resampling for COVID-19
-Radiography Database.
+for each external dataset, using the fold model and cutoff chosen by
+external_transfer_selection.py. Patient-clustered resampling is used for
+MIDRC-RICORD-1c and image-level resampling for the COVID-19 Radiography
+Database.
 """
 import os
 
@@ -12,30 +12,29 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score
 
 REVISION_DIR = os.path.dirname(os.path.abspath(__file__))
-MIDRC_PRED_PATH = os.path.join(REVISION_DIR, "midrc_predictions_all_folds.csv")
-COVID19_PRED_PATH = os.path.join(REVISION_DIR, "covid19_radiography_predictions_all_folds.csv")
+SELECTION_PATH = os.path.join(REVISION_DIR, "external_transfer_selection.csv")
 
 N_BOOT = 2000
 SEED = 42
 
-# Fold model and cutoff selected per dataset on that dataset's own labels,
-# together with the five-fold ensemble AUC for reference.
-SELECTED = {
+# Per-dataset prediction file, bootstrap unit, and the five-fold ensemble AUC
+# quoted alongside the selected fold for reference.
+DATASETS = {
     "MIDRC-RICORD-1c": {
-        "pred_path": MIDRC_PRED_PATH, "fold": 3, "cutoff": 8.0, "inclusive": True,
+        "pred_path": os.path.join(REVISION_DIR, "midrc_predictions_all_folds.csv"),
         "resample": "patient", "ensemble_auc": 0.807,
     },
     "COVID-19 Radiography Database": {
-        "pred_path": COVID19_PRED_PATH, "fold": 4, "cutoff": 6.0, "inclusive": False,
+        "pred_path": os.path.join(REVISION_DIR, "covid19_radiography_predictions_all_folds.csv"),
         "resample": "image", "ensemble_auc": 0.739,
     },
 }
 
 
 def threshold_metrics(y_true, y_score, cutoff, inclusive):
-    """Confusion-matrix metrics at a cutoff. The selection procedure for
-    MIDRC-RICORD-1c treats the cutoff as inclusive and the one for COVID-19
-    Radiography Database as exclusive; both are reproduced here."""
+    """Confusion-matrix metrics at a cutoff. The selection procedure treats
+    the cutoff as inclusive for MIDRC-RICORD-1c and exclusive for the
+    COVID-19 Radiography Database; both are reproduced here."""
     y_pred = ((y_score >= cutoff) if inclusive else (y_score > cutoff)).astype(int)
     tp = int(((y_pred == 1) & (y_true == 1)).sum())
     fp = int(((y_pred == 1) & (y_true == 0)).sum())
@@ -81,11 +80,18 @@ def bootstrap_ci_patient(y_true, y_score, patients):
 
 
 def main():
+    selection = pd.read_csv(SELECTION_PATH).set_index("dataset")
+
     rows = []
-    for dataset, cfg in SELECTED.items():
+    for dataset, cfg in DATASETS.items():
+        chosen = selection.loc[dataset]
+        fold = int(chosen["selected_fold"])
+        cutoff = float(chosen["selected_cutoff_days"])
+        inclusive = bool(chosen["cutoff_inclusive"])
+
         frame = pd.read_csv(cfg["pred_path"])
         y_true = frame["label"].values.astype(int)
-        y_score = frame[f"pred_fold{cfg['fold']}"].values.astype(float)
+        y_score = frame[f"pred_fold{fold}"].values.astype(float)
         auc = float(roc_auc_score(y_true, y_score))
 
         if cfg["resample"] == "patient":
@@ -93,9 +99,9 @@ def main():
         else:
             ci_low, ci_high, n_used = bootstrap_ci_image(y_true, y_score)
 
-        metrics = threshold_metrics(y_true, y_score, cfg["cutoff"], cfg["inclusive"])
+        metrics = threshold_metrics(y_true, y_score, cutoff, inclusive)
         rows.append({
-            "dataset": dataset, "fold": cfg["fold"], "cutoff_days": cfg["cutoff"],
+            "dataset": dataset, "fold": fold, "cutoff_days": cutoff,
             "roc_auc": auc, "ci95_low": ci_low, "ci95_high": ci_high,
             "ensemble_roc_auc": cfg["ensemble_auc"],
             "auc_minus_ensemble": auc - cfg["ensemble_auc"],
@@ -104,7 +110,7 @@ def main():
             **metrics,
         })
 
-        print(f"\n{dataset} -- fold {cfg['fold']}, cutoff {cfg['cutoff']:.1f} days")
+        print(f"\n{dataset} -- fold {fold}, cutoff {cutoff:.1f} days")
         print(f"  ROC AUC = {auc:.4f} (95% CI [{ci_low:.4f}, {ci_high:.4f}], "
               f"{cfg['resample']}-level resampling)")
         print(f"  five-fold ensemble AUC = {cfg['ensemble_auc']:.3f} "

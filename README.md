@@ -18,8 +18,7 @@ AI_Cov19/
 ├── imaging/                  Swin Transformer imaging branch
 ├── integrated/                clinical (XGBoost) + integrated models
 ├── evaluation/                DeLong tests, threshold sweep, mortality validation,
-│   ├── severity_eval/         metrics tables, and cross-dataset transfer evaluation
-│   └── binary_external_eval/
+│                              metrics tables, and cross-dataset transfer evaluation
 ├── fusion_experiments/        alternative imaging-fusion representations (ablation)
 │   └── replace_variants/
 ├── explainability/             Grad-CAM analysis of the imaging model
@@ -58,9 +57,8 @@ AI_Cov19/
 | `specificity_analysis.py` | Diagnostic analysis of the integrated model's specificity at the 5-day decision threshold. |
 | `specificity_check.py` | Tests whether the model's specificity depends on the feature set or the hyperparameter-tuning procedure. |
 | `external_transfer_predictions.py` | Runs the five imaging fold models over both external datasets and saves the per-image predicted length of stay, using the validation preprocessing from `imaging/train_swin.py`. |
-| `external_transfer_metrics.py` | ROC AUC with bootstrap confidence intervals and threshold metrics for the fold model and cutoff selected on each external dataset's own labels. |
-| `severity_eval/sev_eval.py` | Earlier cross-dataset transfer evaluation of the imaging model on MIDRC-RICORD-1c, selecting the fold model and cutoff on that dataset's labels. |
-| `binary_external_eval/pos_neg_analysis.py` | Earlier cross-dataset transfer evaluation of the imaging model on the COVID-19 Radiography Database, selecting a cutoff per fold on that dataset's labels. |
+| `external_transfer_selection.py` | Selects the fold model and predicted-length-of-stay cutoff for each external dataset using that dataset's own labels. |
+| `external_transfer_metrics.py` | ROC AUC with bootstrap confidence intervals and threshold metrics at the selected fold and cutoff, patient-clustered for MIDRC-RICORD-1c. |
 
 ### `fusion_experiments/`
 | File | Description |

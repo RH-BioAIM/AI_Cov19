@@ -1,6 +1,6 @@
 """
-Builds the manuscript's Table II, comparing model metrics on the full and
-restricted feature sets.
+Compares the manuscript's Table II against the same metrics recomputed from
+the saved out-of-fold prediction files.
 """
 import os
 import pandas as pd
@@ -12,16 +12,15 @@ from lifelines.utils import concordance_index
 REVISION_DIR = os.path.dirname(os.path.abspath(__file__))
 LOS_THRESHOLD = 5
 
-# The manuscript's published Table II (5-day threshold) and integrated ROC
-# AUC. Imaging-only and clinical-only ROC AUC are not published and are
-# left as None.
-ORIGINAL_TABLE = {
-    "integrated":    {"accuracy": 0.876, "precision": 0.836, "recall": 0.958, "f1": 0.893,
-                       "specificity": 0.781, "c_index": 0.844, "roc_auc": 0.930},
+# The manuscript's Table II at the 5-day threshold, for comparison against
+# the metrics recomputed from the prediction files below.
+PUBLISHED_TABLE = {
+    "integrated":    {"accuracy": 0.783, "precision": 0.720, "recall": 0.977, "f1": 0.829,
+                       "specificity": 0.557, "c_index": 0.812, "roc_auc": 0.871},
     "imaging_only":  {"accuracy": 0.739, "precision": 0.718, "recall": 0.847, "f1": 0.779,
-                       "specificity": 0.611, "c_index": 0.757, "roc_auc": None},
-    "clinical_only": {"accuracy": 0.782, "precision": 0.722, "recall": 0.961, "f1": 0.825,
-                       "specificity": 0.577, "c_index": 0.834, "roc_auc": None},
+                       "specificity": 0.611, "c_index": 0.757, "roc_auc": 0.814},
+    "clinical_only": {"accuracy": 0.760, "precision": 0.698, "recall": 0.976, "f1": 0.814,
+                       "specificity": 0.506, "c_index": 0.780, "roc_auc": 0.852},
 }
 
 FILES = {
@@ -57,14 +56,12 @@ def main():
         m = compute_full_metrics(df["true_los"].values, df["predicted_los"].values)
         new_metrics[model] = m
         for metric in METRICS:
-            orig = ORIGINAL_TABLE[model][metric]
-            new = m[metric]
+            published = PUBLISHED_TABLE[model][metric]
+            recomputed = m[metric]
             rows.append({
                 "model": MODEL_DISPLAY[model], "metric": metric,
-                "original": orig, "new_restricted": round(new, 3),
-                "delta": round(new - orig, 3) if orig is not None else None,
-                "feature_set_note": "original=full (leaky) feature set; new=restricted (triage-time) feature set"
-                                     if model != "imaging_only" else "apples-to-apples (imaging never used clinical features)",
+                "published": published, "recomputed": round(recomputed, 3),
+                "delta": round(recomputed - published, 3) if published is not None else None,
             })
 
     out = pd.DataFrame(rows)
@@ -72,17 +69,17 @@ def main():
     out.to_csv(path, index=False)
 
     print("=" * 100)
-    print("TABLE II COMPARISON -- original (full feature set) vs. new (restricted feature set), 5-day threshold")
+    print("TABLE II -- published values vs. metrics recomputed from the prediction files, 5-day threshold")
     print("=" * 100)
-    print(out.drop(columns=["feature_set_note"]).to_string(index=False))
+    print(out.to_string(index=False))
     print(f"\nSaved {path}")
 
     print("\n" + "=" * 100)
-    print("HEADLINE SHIFTS (one line per model)")
+    print("PER-MODEL SUMMARY (published -> recomputed)")
     print("=" * 100)
     for model in FILES:
-        o, n = ORIGINAL_TABLE[model], new_metrics[model]
-        auc_o = f"{o['roc_auc']:.3f}" if o["roc_auc"] is not None else "not reported"
+        o, n = PUBLISHED_TABLE[model], new_metrics[model]
+        auc_o = f"{o['roc_auc']:.3f}" if o["roc_auc"] is not None else "not published"
         print(f"{MODEL_DISPLAY[model]}: "
               f"AUC {auc_o} -> {n['roc_auc']:.3f}  |  "
               f"C-index {o['c_index']:.3f} -> {n['c_index']:.3f}  |  "

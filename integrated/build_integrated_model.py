@@ -13,7 +13,7 @@ REVISION_DIR = os.path.dirname(os.path.abspath(__file__))
 ALLDATA_PATH = "/path/to/data/AllData.csv"
 IMAGING_PRED_PATH = "/path/to/checkpoints/all_fold_predictions.csv"
 
-LOS_THRESHOLD = 5  # severity cutoff, matches paper / sev_eval.py convention
+LOS_THRESHOLD = 5  # severity cutoff, matches the manuscript
 XGB_PARAMS = {"objective": "reg:squarederror", "tree_method": "hist", "seed": 42}
 NUM_BOOST_ROUND = 1000
 EARLY_STOPPING_ROUNDS = 20
