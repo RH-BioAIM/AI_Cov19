@@ -18,7 +18,7 @@ AI_Cov19/
 ├── imaging/                  Swin Transformer imaging branch
 ├── integrated/                clinical (XGBoost) + integrated models
 ├── evaluation/                DeLong tests, threshold sweep, mortality validation,
-│   ├── severity_eval/         metrics tables, and external evaluations
+│   ├── severity_eval/         metrics tables, and cross-dataset transfer evaluation
 │   └── binary_external_eval/
 ├── fusion_experiments/        alternative imaging-fusion representations (ablation)
 │   └── replace_variants/
@@ -57,15 +57,17 @@ AI_Cov19/
 | `table2_comparison.py` | Builds the manuscript's Table II: full feature set vs. restricted feature set model metrics. |
 | `specificity_analysis.py` | Diagnostic analysis of the integrated model's specificity at the 5-day decision threshold. |
 | `specificity_check.py` | Tests whether the model's specificity depends on the feature set or the hyperparameter-tuning procedure. |
-| `severity_eval/sev_eval.py` | External evaluation of the imaging model on the MIDRC-RICORD-1c severity-stratified dataset. |
-| `binary_external_eval/pos_neg_analysis.py` | External binary evaluation of the imaging model on the Kaggle COVID-19 Radiography Database. |
+| `external_transfer_predictions.py` | Runs the five imaging fold models over both external datasets and saves the per-image predicted length of stay, using the validation preprocessing from `imaging/train_swin.py`. |
+| `external_transfer_metrics.py` | ROC AUC with bootstrap confidence intervals and threshold metrics for the fold model and cutoff selected on each external dataset's own labels. |
+| `severity_eval/sev_eval.py` | Earlier cross-dataset transfer evaluation of the imaging model on MIDRC-RICORD-1c, selecting the fold model and cutoff on that dataset's labels. |
+| `binary_external_eval/pos_neg_analysis.py` | Earlier cross-dataset transfer evaluation of the imaging model on the COVID-19 Radiography Database, selecting a cutoff per fold on that dataset's labels. |
 
 ### `fusion_experiments/`
 | File | Description |
 |---|---|
 | `extract_embeddings.py` | Extracts the Swin backbone's image embeddings for every patient, out-of-fold. |
-| `compare_fusion_variants.py` | Ablation study comparing the scalar imaging fusion against variants that add PCA-reduced or raw imaging embeddings. |
-| `replace_variants/compare_replace_variants.py` | Tests replacing the scalar imaging feature with embeddings at several PCA dimensionalities. |
+| `compare_fusion_variants.py` | Ablation study comparing the scalar imaging fusion against variants that add PCA-reduced or raw imaging embeddings, with boosting rounds chosen by inner cross-validation. Generates **Supplementary Table S3**. |
+| `replace_variants/compare_replace_variants.py` | Tests replacing the scalar imaging feature with embeddings at several PCA dimensionalities, with boosting rounds chosen by inner cross-validation. |
 
 ### `explainability/`
 | File | Description |
@@ -87,8 +89,10 @@ AI_Cov19/
 **No patient data, chest radiographs, NIfTI/DICOM files, or trained model checkpoints are included in this repository.** All data-loading paths in the scripts are placeholders (see *Configuration / paths* below) that must be pointed at your own local copies of the following datasets, obtained independently from their original sources:
 
 1. **Stony Brook University COVID-19 dataset (COVID-19-NY-SBU).** The primary cohort's chest radiographs and structured clinical variables (labs, vitals, comorbidities, outcomes). Available via **The Cancer Imaging Archive (TCIA)**.
-2. **MIDRC-RICORD-1c.** A severity-stratified (mild/severe) chest radiograph dataset, used for the external severity evaluation (`evaluation/severity_eval/sev_eval.py`). Available via the **Medical Imaging and Data Resource Center (MIDRC)** and TCIA.
-3. **COVID-19 Radiography Database.** Used for the external binary (positive/negative) evaluation (`evaluation/binary_external_eval/pos_neg_analysis.py`). Publicly available on **Kaggle** (`tawsifurrahman/covid19-radiography-database`). `preprocessing/importkaggle.py` downloads it automatically via `kagglehub` once you have Kaggle API credentials configured.
+2. **MIDRC-RICORD-1c.** A severity-stratified (mild/severe) chest radiograph dataset, used for the cross-dataset transfer evaluation (`evaluation/external_transfer_predictions.py`, `evaluation/external_transfer_metrics.py`). Available via the **Medical Imaging and Data Resource Center (MIDRC)** and TCIA.
+3. **COVID-19 Radiography Database.** Also used for the cross-dataset transfer evaluation, as a COVID-19-versus-normal task. Publicly available on **Kaggle** (`tawsifurrahman/covid19-radiography-database`). `preprocessing/importkaggle.py` downloads it automatically via `kagglehub` once you have Kaggle API credentials configured.
+
+The imaging branch is trained on the Stony Brook cohort only. Neither external dataset contributes to training, and both external tasks differ from the length-of-stay training target, so these evaluations are reported as cross-dataset transfer rather than as validation of the full multimodal framework.
 
 Users must obtain each dataset independently under its own data-use terms and set their own local paths before running any script.
 

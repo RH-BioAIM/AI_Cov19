@@ -1,5 +1,5 @@
 """
-Evaluates the imaging model on the Kaggle COVID-19 Radiography Database as
+Evaluates the imaging model on the COVID-19 Radiography Database as
 a binary classification task.
 """
 import os
@@ -48,10 +48,10 @@ def preprocess_xray(path):
         return None
 
 # Directories
-covid_dir = "/path/to/data/pos_neg_database/COVID-19_Radiography_Dataset/COVID/images"
-normal_dir = "/path/to/data/pos_neg_database/COVID-19_Radiography_Dataset/Normal/images"
+covid_dir = "/path/to/data/COVID-19_Radiography_Dataset/COVID/images"
+normal_dir = "/path/to/data/COVID-19_Radiography_Dataset/Normal/images"
 model_dir = "vit_checkpoints"
-plot_dir = "/path/to/output/pos_neg_plots"
+plot_dir = "/path/to/output/covid19_radiography_plots"
 os.makedirs(plot_dir, exist_ok=True)
 
 # Load img

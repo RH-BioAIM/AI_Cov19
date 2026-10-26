@@ -10,7 +10,7 @@ import os
 path = kagglehub.dataset_download("tawsifurrahman/covid19-radiography-database")
 
 # Target directory for the local copy.
-target_dir = "/path/to/data/pos_neg_database"
+target_dir = "/path/to/data/COVID-19_Radiography_Dataset"
 
 # Create the target directory if it doesn't exist.
 os.makedirs(target_dir, exist_ok=True)

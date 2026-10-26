@@ -1,6 +1,8 @@
 """
-Compares replacing the scalar imaging feature with Swin embeddings for the
-restricted integrated model.
+Compares replacing the scalar imaging feature with Swin embeddings for
+the restricted integrated model, with the number of boosting rounds for
+each outer fold chosen by an inner cross-validation on that fold's
+training data only.
 """
 import os
 import sys
@@ -17,7 +19,7 @@ from scipy import stats
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FUSION_DIR = os.path.dirname(HERE)  # fusion_experiments/
-# build_integrated_model.py lives in ../../integrated/.
+# build_integrated_model.py lives at ../../integrated/.
 INTEGRATED_DIR = os.path.join(os.path.dirname(FUSION_DIR), "integrated")
 sys.path.insert(0, INTEGRATED_DIR)
 from build_integrated_model import load_shared_cohort, build_feature_matrix  # noqa: E402
@@ -34,51 +36,113 @@ EARLY_STOPPING_ROUNDS = 100
 COMMITTED = {
     "variant": "REFERENCE_committed_scalar_nested_cv", "auc": 0.871336, "c_index": 0.812217,
     "specificity": 0.556634, "recall": 0.976, "tn": 344, "fp": 274, "fn": 17, "tp": 706,
-    "per_fold_spec_sd": np.nan, "note": "per-outer-fold nested-CV tuned, not fixed-config",
+    "per_fold_spec_sd": np.nan, "note": "per-outer-fold nested-CV tuned, NOT fixed-config -- see docstring",
 }
-# Added-embeddings variants under the same fixed config and partition,
-# included as same-config baselines for comparison.
+# From the prior ADDED-embeddings run (fusion_variant_comparison.csv),
+# fixed-config, same partition -- included as the fair same-config baselines/comparators.
 V0_BASELINE_FIXED_CONFIG = {
     "variant": "REFERENCE_V0_scalar_only_fixed_config", "auc": 0.870440, "c_index": 0.812620,
     "specificity": 0.537217, "recall": 0.971, "tn": None, "fp": None, "fn": None, "tp": None,
-    "per_fold_spec_sd": 0.0478, "note": "fixed config, scalar predicted_los only, no embeddings",
+    "per_fold_spec_sd": 0.0478, "note": "prior run -- same fixed config, scalar predicted_los only, no embeddings",
 }
 V1_PCA16_ADDED = {
     "variant": "REFERENCE_V1_scalar_plus_pca16_added", "auc": 0.868019, "c_index": 0.811373,
     "specificity": 0.548544, "recall": 0.9696, "tn": None, "fp": None, "fn": None, "tp": None,
-    "per_fold_spec_sd": 0.0577, "note": "scalar retained, PCA16 embeddings added on top",
+    "per_fold_spec_sd": 0.0577, "note": "prior run -- scalar KEPT, PCA16 embeddings added on top",
 }
 V2_RAW1024_ADDED = {
     "variant": "REFERENCE_V2_scalar_plus_raw1024_added", "auc": 0.862334, "c_index": 0.806608,
     "specificity": 0.512945, "recall": 0.9820, "tn": None, "fp": None, "fn": None, "tp": None,
-    "per_fold_spec_sd": 0.0867, "note": "scalar retained, raw 1024-dim embeddings added on top",
+    "per_fold_spec_sd": 0.0867, "note": "prior run -- scalar KEPT, raw 1024-dim embeddings added on top",
 }
 
 
-def train_fixed_config_cv(X, y, folds, label):
-    oof_pred = pd.Series(index=X.index, dtype=float)
-    for f in sorted(folds.unique()):
-        train_idx, test_idx = folds != f, folds == f
-        dtrain = xgb.DMatrix(X[train_idx], label=y[train_idx], enable_categorical=True)
-        dtest = xgb.DMatrix(X[test_idx], label=y[test_idx], enable_categorical=True)
-        model = xgb.train(FIXED_PARAMS, dtrain, num_boost_round=NUM_BOOST_ROUND,
-                           early_stopping_rounds=EARLY_STOPPING_ROUNDS,
-                           evals=[(dtest, "eval")], verbose_eval=False)
-        oof_pred[test_idx] = model.predict(dtest, iteration_range=(0, model.best_iteration + 1))
-        print(f"  [{label}] fold {f}: n_train={train_idx.sum()} n_feat={X.shape[1]} best_iter={model.best_iteration}")
-    assert oof_pred.notna().all()
-    return oof_pred
+def fit_transforms(spec, embeddings, fit_mask):
+    """Fit every data-dependent transform on fit_mask rows ONLY. Called once
+    per inner fold (inner-training rows) and once per outer fold for the
+    refit (full outer-training rows)."""
+    tf = {}
+    emb = spec.get("emb")
+    if emb is not None and emb[0] == "pca":
+        pca = PCA(n_components=emb[1], random_state=42)
+        pca.fit(embeddings.loc[fit_mask].values)
+        tf["pca"] = pca
+    return tf
 
 
-def fold_honest_pca(embeddings, folds, k):
-    out = pd.DataFrame(index=embeddings.index, columns=[f"pca_{i}" for i in range(k)], dtype=float)
+def apply_transforms(spec, tf, X_clin, embeddings, mask):
+    """Feature matrix for rows in `mask`, using transforms fit on training rows."""
+    Xm = X_clin.loc[mask].copy()
+    kind, k = spec["emb"]
+    if kind == "pca":
+        Z = tf["pca"].transform(embeddings.loc[mask].values)
+        block = pd.DataFrame(Z, columns=[f"pca_{i}" for i in range(k)], index=Xm.index)
+    else:
+        block = embeddings.loc[mask].copy()
+        block.index = Xm.index
+    return pd.concat([Xm, block], axis=1)
+
+
+def train_leakfree_cv(spec, X_clin, embeddings, y, folds, label):
+    """Outer 5-fold CV; the boosting-round count per outer fold comes from a
+    4-fold inner CV on that fold's TRAINING rows only. The outer refit uses
+    exactly that many rounds, with no early stopping and no test data in
+    `evals`. PCA is refit on each level's training rows."""
+    oof_pred = pd.Series(index=y.index, dtype=float)
+    rounds_log = []
+
     for f in sorted(folds.unique()):
         train_mask = folds != f
         test_mask = folds == f
-        pca = PCA(n_components=k, random_state=42)
-        pca.fit(embeddings.loc[train_mask].values)
-        out.loc[test_mask, :] = pca.transform(embeddings.loc[test_mask].values)
-    return out
+
+        inner_labels = sorted(folds[train_mask].unique())
+        inner_iters = []
+        for g in inner_labels:
+            itr = train_mask & (folds != g)
+            iva = train_mask & (folds == g)
+            tf_in = fit_transforms(spec, embeddings, itr)
+            Xi_tr = apply_transforms(spec, tf_in, X_clin, embeddings, itr)
+            Xi_va = apply_transforms(spec, tf_in, X_clin, embeddings, iva)
+            d_itr = xgb.DMatrix(Xi_tr, label=y[itr], enable_categorical=True)
+            d_iva = xgb.DMatrix(Xi_va, label=y[iva], enable_categorical=True)
+            m = xgb.train(FIXED_PARAMS, d_itr, num_boost_round=NUM_BOOST_ROUND,
+                          early_stopping_rounds=EARLY_STOPPING_ROUNDS,
+                          evals=[(d_iva, "inner_val")], verbose_eval=False)
+            inner_iters.append(int(m.best_iteration))
+
+        n_rounds = max(1, int(round(float(np.mean(inner_iters)))))
+
+        tf_out = fit_transforms(spec, embeddings, train_mask)
+        X_tr = apply_transforms(spec, tf_out, X_clin, embeddings, train_mask)
+        X_te = apply_transforms(spec, tf_out, X_clin, embeddings, test_mask)
+        d_tr = xgb.DMatrix(X_tr, label=y[train_mask], enable_categorical=True)
+        d_te = xgb.DMatrix(X_te, enable_categorical=True)  # no label
+        final = xgb.train(FIXED_PARAMS, d_tr, num_boost_round=n_rounds, verbose_eval=False)
+        oof_pred[test_mask] = final.predict(d_te)
+
+        rounds_log.append({"variant": label, "outer_fold": int(f), "n_train": int(train_mask.sum()),
+                           "n_test": int(test_mask.sum()), "n_feat": int(X_tr.shape[1]),
+                           "inner_best_iters": inner_iters, "n_rounds_refit": n_rounds})
+        print(f"  [{label}] fold {f}: n_train={train_mask.sum()} n_feat={X_tr.shape[1]} "
+              f"inner_best_iters={inner_iters} -> n_rounds={n_rounds}", flush=True)
+
+    assert oof_pred.notna().all()
+    return oof_pred, rounds_log
+
+
+# Replace variants: clinical(116) only as the base, embeddings as the SOLE imaging input.
+VARIANTS = [
+    {"name": "R1_pca16_replace", "emb": ("pca", 16),
+     "note": "clinical + PCA16(embeddings), scalar predicted_los REMOVED"},
+    {"name": "R2_raw1024_replace", "emb": ("raw", EMB_DIM),
+     "note": "clinical + raw 1024-dim embeddings, scalar predicted_los REMOVED"},
+    {"name": "R3_pca8_replace", "emb": ("pca", 8),
+     "note": "clinical + PCA8(embeddings), scalar predicted_los REMOVED"},
+    {"name": "R3_pca32_replace", "emb": ("pca", 32),
+     "note": "clinical + PCA32(embeddings), scalar predicted_los REMOVED"},
+    {"name": "R3_pca64_replace", "emb": ("pca", 64),
+     "note": "clinical + PCA64(embeddings), scalar predicted_los REMOVED"},
+]
 
 
 def per_fold_specificity_sd(y_true_los, y_score, folds, decision_threshold=5.0):
@@ -133,8 +197,40 @@ def main():
     print("=" * 70)
     print("Replace-fusion observation study: embeddings REPLACE scalar predicted_los")
     print("=" * 70)
-    print(f"Fixed hyperparameters (same as prior added-embeddings run): {FIXED_PARAMS}")
-    print(f"num_boost_round={NUM_BOOST_ROUND}, early_stopping_rounds={EARLY_STOPPING_ROUNDS} (outer test fold)")
+    print(f"Fixed hyperparameters (same as the added-embeddings run): {FIXED_PARAMS}")
+    print(f"num_boost_round<={NUM_BOOST_ROUND}, early_stopping_rounds={EARLY_STOPPING_ROUNDS} "
+          f"monitored on the INNER VALIDATION fold; outer refit uses the mean inner best_iteration "
+          f"with NO early stopping and NO test data in evals.")
+
+    # Reference rows come from the added-embeddings run.
+    add_variant_path = os.path.join(FUSION_DIR, "fusion_variant_comparison.csv")
+    assert os.path.exists(add_variant_path), (
+        f"{add_variant_path} not found -- run compare_fusion_variants.py first so that the "
+        f"V0/V1/V2 reference rows come from the same procedure.")
+    add_df = pd.read_csv(add_variant_path).set_index("variant")
+    global V0_BASELINE_FIXED_CONFIG, V1_PCA16_ADDED, V2_RAW1024_ADDED
+    for key, src, label, note in [
+        ("V0", "V0_baseline_fixed_config", "REFERENCE_V0_scalar_only",
+         "scalar predicted_los only, no embeddings"),
+        ("V1", "V1_embeddings_pca16_added", "REFERENCE_V1_scalar_plus_pca16_added",
+         "scalar retained, PCA16 embeddings added on top"),
+        ("V2", "V2_embeddings_raw1024_added", "REFERENCE_V2_scalar_plus_raw1024_added",
+         "scalar retained, raw 1024-dim embeddings added on top"),
+    ]:
+        r = add_df.loc[src]
+        d = {"variant": label, "auc": float(r["auc"]), "c_index": float(r["c_index"]),
+             "specificity": float(r["specificity_at_5day_cutoff"]),
+             "recall": float(r["recall_at_5day_cutoff"]),
+             "tn": None, "fp": None, "fn": None, "tp": None,
+             "per_fold_spec_sd": float(r["per_fold_spec_sd"]), "note": note}
+        if key == "V0":
+            V0_BASELINE_FIXED_CONFIG = d
+        elif key == "V1":
+            V1_PCA16_ADDED = d
+        else:
+            V2_RAW1024_ADDED = d
+    print(f"\nReference rows loaded from {os.path.basename(add_variant_path)}: "
+          f"V0 AUC={V0_BASELINE_FIXED_CONFIG['auc']:.6f} spec={V0_BASELINE_FIXED_CONFIG['specificity']:.6f}")
 
     emb_path = os.path.join(FUSION_DIR, "imaging_embeddings.csv")
     assert os.path.exists(emb_path), f"embeddings not found at {emb_path} -- run extract_embeddings.py first"
@@ -158,33 +254,16 @@ def main():
     embeddings.index = X_clin.index
 
     results = []
+    all_rounds = []
+    oof_store = {}
 
-    # --- R1: clinical + PCA16(embeddings), NO scalar ---
-    print("\n" + "=" * 70 + "\nR1: pca16_replace (clinical + PCA16 embeddings, no predicted_los)\n" + "=" * 70)
-    pca16 = fold_honest_pca(embeddings, folds, k=16)
-    X_r1 = pd.concat([X_clin.reset_index(drop=True), pca16.reset_index(drop=True)], axis=1)
-    X_r1.index = X_clin.index
-    oof_r1 = train_fixed_config_cv(X_r1, y, folds, "R1")
-    results.append(evaluate("R1_pca16_replace", y, oof_r1, folds,
-                             note="clinical + PCA16(embeddings), scalar predicted_los REMOVED"))
-
-    # --- R2: clinical + raw 1024-dim embeddings, NO scalar ---
-    print("\n" + "=" * 70 + "\nR2: raw1024_replace (clinical + raw 1024 embeddings, no predicted_los)\n" + "=" * 70)
-    X_r2 = pd.concat([X_clin.reset_index(drop=True), embeddings.reset_index(drop=True)], axis=1)
-    X_r2.index = X_clin.index
-    oof_r2 = train_fixed_config_cv(X_r2, y, folds, "R2")
-    results.append(evaluate("R2_raw1024_replace", y, oof_r2, folds,
-                             note="clinical + raw 1024-dim embeddings, scalar predicted_los REMOVED"))
-
-    # --- R3: clinical + PCA-k(embeddings) at k in {8, 32, 64}, NO scalar ---
-    for k in (8, 32, 64):
-        print("\n" + "=" * 70 + f"\nR3: pca{k}_replace (clinical + PCA{k} embeddings, no predicted_los)\n" + "=" * 70)
-        pca_k = fold_honest_pca(embeddings, folds, k=k)
-        X_rk = pd.concat([X_clin.reset_index(drop=True), pca_k.reset_index(drop=True)], axis=1)
-        X_rk.index = X_clin.index
-        oof_rk = train_fixed_config_cv(X_rk, y, folds, f"R3_pca{k}")
-        results.append(evaluate(f"R3_pca{k}_replace", y, oof_rk, folds,
-                                 note=f"clinical + PCA{k}(embeddings), scalar predicted_los REMOVED"))
+    for spec in VARIANTS:
+        name = spec["name"]
+        print("\n" + "=" * 70 + f"\n{name}: {spec['note']}\n" + "=" * 70)
+        oof, rounds_log = train_leakfree_cv(spec, X_clin, embeddings, y, folds, name)
+        all_rounds.extend(rounds_log)
+        oof_store[name] = oof
+        results.append(evaluate(name, y, oof, folds, note=spec["note"]))
 
     out = pd.DataFrame(results)
 
@@ -206,6 +285,19 @@ def main():
     print(f"\nSaved {out_path}")
     print(f"Saved {ref_path}")
 
+    rounds_df = pd.DataFrame(all_rounds)
+    rounds_path = os.path.join(HERE, "replace_variant_rounds.csv")
+    rounds_df.to_csv(rounds_path, index=False)
+    print(f"Saved {rounds_path}")
+
+    oof_df = pd.DataFrame({"subjectID": df["to_patient_id"].values, "fold": folds.values,
+                           "true_los": y.values})
+    for name, oof in oof_store.items():
+        oof_df[f"oof_{name}"] = oof.values
+    oof_path = os.path.join(HERE, "replace_variant_oof_predictions.csv")
+    oof_df.to_csv(oof_path, index=False, float_format="%.8f")
+    print(f"Saved {oof_path}")
+
     print("\n" + "=" * 70)
     print("FULL COMPARISON (reference rows + replace variants)")
     print("=" * 70)
@@ -217,7 +309,8 @@ def main():
 
     print("\n" + "=" * 70)
     print("KEY QUESTION: does any embedding-ONLY (replace) fusion beat the scalar-only")
-    print("fixed-config fusion (V0, spec=0.5372, AUC=0.8704) on specificity or AUC?")
+    print(f"scalar fusion (V0, spec={V0_BASELINE_FIXED_CONFIG['specificity']:.4f}, "
+          f"AUC={V0_BASELINE_FIXED_CONFIG['auc']:.4f}) on specificity or AUC?")
     print("=" * 70)
     for r in results:
         beats_v0_spec = r["specificity"] > V0_BASELINE_FIXED_CONFIG["specificity"]
