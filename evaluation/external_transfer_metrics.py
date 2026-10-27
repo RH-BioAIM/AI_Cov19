@@ -17,16 +17,17 @@ SELECTION_PATH = os.path.join(REVISION_DIR, "external_transfer_selection.csv")
 N_BOOT = 2000
 SEED = 42
 
-# Per-dataset prediction file, bootstrap unit, and the five-fold ensemble AUC
-# quoted alongside the selected fold for reference.
+# Per-dataset prediction file and bootstrap unit. The five-fold ensemble AUC
+# is computed from the pred_ensemble_mean column for reference alongside the
+# selected fold.
 DATASETS = {
     "MIDRC-RICORD-1c": {
         "pred_path": os.path.join(REVISION_DIR, "midrc_predictions_all_folds.csv"),
-        "resample": "patient", "ensemble_auc": 0.807,
+        "resample": "patient",
     },
     "COVID-19 Radiography Database": {
         "pred_path": os.path.join(REVISION_DIR, "covid19_radiography_predictions_all_folds.csv"),
-        "resample": "image", "ensemble_auc": 0.739,
+        "resample": "image",
     },
 }
 
@@ -93,6 +94,7 @@ def main():
         y_true = frame["label"].values.astype(int)
         y_score = frame[f"pred_fold{fold}"].values.astype(float)
         auc = float(roc_auc_score(y_true, y_score))
+        ensemble_auc = float(roc_auc_score(y_true, frame["pred_ensemble_mean"].values.astype(float)))
 
         if cfg["resample"] == "patient":
             ci_low, ci_high, n_used = bootstrap_ci_patient(y_true, y_score, frame["patient_id"].values)
@@ -103,8 +105,8 @@ def main():
         rows.append({
             "dataset": dataset, "fold": fold, "cutoff_days": cutoff,
             "roc_auc": auc, "ci95_low": ci_low, "ci95_high": ci_high,
-            "ensemble_roc_auc": cfg["ensemble_auc"],
-            "auc_minus_ensemble": auc - cfg["ensemble_auc"],
+            "ensemble_roc_auc": ensemble_auc,
+            "auc_minus_ensemble": auc - ensemble_auc,
             "n_images": int(len(frame)), "n_positive": int((y_true == 1).sum()),
             "n_negative": int((y_true == 0).sum()), "n_bootstrap_used": n_used,
             **metrics,
@@ -113,8 +115,8 @@ def main():
         print(f"\n{dataset} -- fold {fold}, cutoff {cutoff:.1f} days")
         print(f"  ROC AUC = {auc:.4f} (95% CI [{ci_low:.4f}, {ci_high:.4f}], "
               f"{cfg['resample']}-level resampling)")
-        print(f"  five-fold ensemble AUC = {cfg['ensemble_auc']:.3f} "
-              f"(difference {auc - cfg['ensemble_auc']:+.4f})")
+        print(f"  five-fold ensemble AUC = {ensemble_auc:.4f} "
+              f"(difference {auc - ensemble_auc:+.4f})")
         print(f"  accuracy={metrics['accuracy']:.4f} precision={metrics['precision']:.4f} "
               f"recall={metrics['recall']:.4f} specificity={metrics['specificity']:.4f} "
               f"f1={metrics['f1']:.4f}")

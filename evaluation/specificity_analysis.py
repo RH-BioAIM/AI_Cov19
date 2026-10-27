@@ -215,7 +215,6 @@ def main():
     print("=" * 70)
     r95 = thr_result[thr_result["target_recall"] == 0.95].iloc[0]
     r97 = thr_result[thr_result["target_recall"] == 0.97].iloc[0]
-    print(f"At the literal 5-day cutoff: recall=0.976, specificity=0.557.")
     print(f"Best achievable specificity at recall>=0.95 (different SCORE cutoff, same model): "
           f"{r95['achieved_specificity']:.4f} at cutoff={r95['score_cutoff_days']} days "
           f"(vs literal cutoff of 5.0)")

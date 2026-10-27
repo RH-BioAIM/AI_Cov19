@@ -28,7 +28,7 @@ AI_Cov19/
 ### `preprocessing/`
 | File | Description |
 |---|---|
-| `importkaggle.py` | Downloads the Kaggle COVID-19 Radiography Database and copies it to a local directory. |
+| `importkaggle.py` | Downloads the COVID-19 Radiography Database from Kaggle and copies it to a local directory. |
 
 ### `imaging/`
 | File | Description |
@@ -53,7 +53,7 @@ AI_Cov19/
 | `mortality_validation.py` | Validates the LOS-trained severity score against in-hospital mortality. |
 | `threshold_sweep.py` | Regenerates **Supplementary Table S2**: classification metrics across LOS decision thresholds 3 to 10 days. |
 | `classification_metrics.py` | Classification-metrics table at three decision thresholds for all three restricted models. |
-| `table2_comparison.py` | Builds the manuscript's Table II: full feature set vs. restricted feature set model metrics. |
+| `table2_comparison.py` | Reproduces the manuscript's Table II from the saved out-of-fold predictions, for all three models. |
 | `specificity_analysis.py` | Diagnostic analysis of the integrated model's specificity at the 5-day decision threshold. |
 | `specificity_check.py` | Tests whether the model's specificity depends on the feature set or the hyperparameter-tuning procedure. |
 | `external_transfer_predictions.py` | Runs the five imaging fold models over both external datasets and saves the per-image predicted length of stay, using the validation preprocessing from `imaging/train_swin.py`. |

@@ -90,9 +90,7 @@ def main():
     print("\n" + "=" * 70)
     print("MORTALITY AUC")
     print("=" * 70)
-    print(f"FORCED-SYMMETRIC (both models on the clinical configuration): AUC = 0.8266 "
-          f"(95% CI [0.8004, 0.8528])")
-    print(f"NESTED-TUNED (per-model optimum):                             AUC = {mort_auc['auc']:.4f} "
+    print(f"AUC = {mort_auc['auc']:.4f} "
           f"(95% CI [{mort_auc['ci95_low']:.4f}, {mort_auc['ci95_high']:.4f}])")
 
 

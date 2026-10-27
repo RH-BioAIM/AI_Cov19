@@ -273,8 +273,6 @@ def main():
     print("\n" + "=" * 70)
     print("SUMMARY -- inner-CV boosting rounds")
     print(f"  procedure-matched reference = V0 (this run): AUC={v0_auc:.6f} spec@5day={v0_spec:.6f}")
-    print("  (committed nested-CV model, different procedure: AUC=0.871336, "
-          "C-index=0.812217, spec@5day=0.556634)")
     print("=" * 70)
     display_cols = ["variant", "auc", "c_index", "specificity_at_5day_cutoff",
                      "delta_auc_vs_v0", "delta_spec_vs_v0",

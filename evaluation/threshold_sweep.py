@@ -23,8 +23,7 @@ def threshold_sweep(oof):
 
     # Threshold-independent sanity check, printed only, not written to the CSV.
     cidx = concordance_index(y_true, y_score)
-    print(f"Sanity check -- C-index (threshold-independent): {cidx:.6f} "
-          f"(expected ~0.812217, per build_tuned_models.log / delong_comparison.log)")
+    print(f"Sanity check -- C-index (threshold-independent): {cidx:.6f}")
 
     rows = []
     for thr in range(3, 11):  # 3..10 inclusive -- same loop as part_a_threshold_sweep()

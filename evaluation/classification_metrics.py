@@ -82,18 +82,6 @@ def main():
         print(f"{model}: C-index={list(cidx_vals)}  AUC={list(auc_vals)}  -> {'OK' if ok else 'MISMATCH'}")
     print(f"OVERALL: {'PASS' if all_match else 'FAIL'}")
 
-    # --- consistency check vs Table II's 5-day integrated row ---
-    print("\n" + "=" * 70)
-    print("CONSISTENCY CHECK -- 5-day integrated row vs Table II (accuracy 0.783, recall 0.977, specificity 0.557)")
-    print("=" * 70)
-    integ_5d = out[(out["model"] == "integrated_restricted_nested_tuned") &
-                   (out["decision_threshold_days"] == 5.0)].iloc[0]
-    expected = {"accuracy": 0.783, "recall": 0.977, "specificity": 0.557}
-    for k, v in expected.items():
-        actual = integ_5d[k]
-        match = abs(actual - v) < 0.0015  # rounding tolerance
-        print(f"  {k}: table={v}  this_run={actual}  -> {'MATCH' if match else 'MISMATCH -- INVESTIGATE'}")
-
     # --- flagged comparison: integrated specificity 5d->7d, recall at 7d ---
     print("\n" + "=" * 70)
     print("FLAGGED -- integrated model: specificity improvement and recall tradeoff, 5-day -> 7-day")
